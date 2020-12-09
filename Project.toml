@@ -9,6 +9,7 @@ CodecZstd = "6b39b394-51ab-5f42-8807-6242bab2b4c2"
 Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
+CodecZlib = "0.7"
 julia = "1"
 
 [extras]
