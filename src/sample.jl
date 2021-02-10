@@ -1,6 +1,21 @@
 struct Samples
     samples :: Vector{String}
 end
+function length(x::Samples)
+    return length(x.samples)
+end
+function getindex(x::Samples, i)
+    return x.samples[i]
+end
+function setindex(x::Samples, v, i)
+    x.samples[i] = v
+end
+function firstindex(x::Samples)
+    return firstindex(x.samples)
+end
+function lastindex(x::Samples)
+    return lastindex(x.samples)
+end
 
 function Samples(io::IOStream, n_samples::Integer)
     sample_header_length = read(io, UInt32)

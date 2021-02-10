@@ -30,3 +30,7 @@ function Header(filename::String)
     io = open(filename)
     Header(io)
 end
+
+@inline function offset_first_variant(h::Header)
+    return h.offset + 4
+end
