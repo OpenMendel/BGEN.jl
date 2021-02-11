@@ -26,8 +26,8 @@ samples_test3 = BGEN.Samples(n_samples)
 @test all([string(i) for i in 1:n_samples] .== samples_test3.samples)
 end
 
-@testset "bgen" begin
 bgen = BGEN.Bgen(example_10bits)
+@testset "bgen" begin
 @test bgen.fsize == 223646
 @test bgen.header == header_ref
 n_samples = bgen.header.n_samples
@@ -46,4 +46,19 @@ var = bgen.variants[4]
 @test var.pos == 0x00001388
 @test var.n_alleles == 2
 @test all(var.alleles.== ["A", "G"])
+end
+
+@testset "preamble" begin
+io, v, h = bgen.io, bgen.variants[1], bgen.header
+decompressed = BGEN.decompress(io, v, h)
+idx = [1]
+preamble = BGEN.parse_preamble!(decompressed, idx, h, v)
+@test preamble.phased == 0
+@test preamble.min_ploidy == 2
+@test preamble.max_ploidy == 2
+@test all(preamble.ploidy .== 2)
+@test preamble.bit_depth == 10
+@test preamble.max_probs == 3
+@test length(preamble.missings) == 1
+@test preamble.missings[1] == 1
 end

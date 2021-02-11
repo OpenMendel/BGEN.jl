@@ -26,12 +26,16 @@ function Bgen(path::AbstractString;
     fsize = filesize(path)
     # read header
     header = Header(io)
-
     # read samples
-    if header.has_sample_ids
-        samples = Samples(io, header.n_samples)
-    elseif sample_path !== nothing
+    if sample_path !== nothing
         samples = Samples(sample_path, header.n_samples)
+        # disregard sample names in the header if .sample file is provided
+        if header.has_sample_ids
+            header_sample_length = read(io, UInt32)
+            read(io, header_sample_length)
+        end
+    elseif header.has_sample_ids
+        samples = Samples(io, header.n_samples)
     else
         samples = Samples(header.n_samples)
     end

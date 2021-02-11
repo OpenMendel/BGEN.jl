@@ -20,7 +20,11 @@ end
 function Samples(io::IOStream, n_samples::Integer)
     sample_header_length = read(io, UInt32)
     sample_n_check = read(io, UInt32)
-    @assert n_samples == sample_n_check "Inconsistent number of samples"
+    if sample_n_check != 0
+        @assert n_samples == sample_n_check "Inconsistent number of samples"
+    else
+        @warn "Sample names unavailable. Do you have a separate '.sample' file?"
+    end
     samples = String[]
     for i in 1:n_samples
         id_length = read(io, UInt16)
