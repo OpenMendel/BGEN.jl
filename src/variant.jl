@@ -10,6 +10,8 @@ mutable struct Variant
     pos::UInt32
     n_alleles::UInt16
     alleles::Vector{String}
+    # length-1 for parsed one, empty array for not parsed yet or destroyed,
+    genotypes::Vector{Genotypes}
 end
 
 """
@@ -57,6 +59,16 @@ function Variant(io::IOStream, offset::Integer,
     end
     geno_offset = position(io)
     next_var_offset = geno_offset + geno_block_size
+
     Variant(offset, geno_offset, next_var_offset, geno_block_size, n_samples,
-        varid, rsid, chrom, pos, n_alleles, alleles)
+        varid, rsid, chrom, pos, n_alleles, alleles, [])
+end
+
+"""
+    destroy_genotypes!(v::Variant)
+Destroy any parsed genotype information.
+"""
+function clear!(v::Variant)
+    resize!(v.genotypes, 0)
+    return
 end
