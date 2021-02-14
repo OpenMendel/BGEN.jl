@@ -1,21 +1,6 @@
-mutable struct Variant
-    offset::UInt64
-    geno_offset::UInt64 # to the start of genotype block
-    next_var_offset::UInt64
-    geno_block_size::UInt32
-    n_samples::UInt32
-    varid::String
-    rsid::String
-    chrom::String
-    pos::UInt32
-    n_alleles::UInt16
-    alleles::Vector{String}
-    # length-1 for parsed one, empty array for not parsed yet or destroyed,
-    genotypes::Vector{Genotypes}
-end
-
 """
-    Variant(io, offset, layout, expected_n)
+    Variant(b::Bgen, offset::Integer)
+    Variant(io, offset, compression, layout, expected_n)
 Parse information of a single variant beginning from `offset`.
 """
 function Variant(io::IOStream, offset::Integer,
@@ -30,7 +15,6 @@ function Variant(io::IOStream, offset::Integer,
     if n_samples != expected_n
         @error "number of samples does not match"
     end
-
     varid_len = read(io, UInt16)
     varid = String(read(io, varid_len))
     rsid_len = read(io, UInt16)
@@ -62,6 +46,11 @@ function Variant(io::IOStream, offset::Integer,
 
     Variant(offset, geno_offset, next_var_offset, geno_block_size, n_samples,
         varid, rsid, chrom, pos, n_alleles, alleles, [])
+end
+
+function Variant(b::Bgen, offset::Integer)
+    h = b.header
+    Variant(b.io, offset, h.compression, h.layout, h.n_samples)
 end
 
 """

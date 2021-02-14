@@ -1,6 +1,3 @@
-struct Samples
-    samples :: Vector{String}
-end
 function length(x::Samples)
     return length(x.samples)
 end

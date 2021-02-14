@@ -1,13 +1,3 @@
-struct Header
-    offset::UInt32
-    header_length::UInt32
-    n_variants::UInt32
-    n_samples::UInt32
-    compression::UInt8
-    layout::UInt8
-    has_sample_ids::Bool
-end
-
 function Header(io::IOStream)
     seek(io, 0)
     offset = read(io, UInt32)

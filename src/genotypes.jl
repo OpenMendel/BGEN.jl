@@ -1,5 +1,9 @@
 const lookup = [i / 255 for i in 0:510]
 
+function Genotypes{T}(p::Preamble, d::Vector{UInt8}) where T <: AbstractFloat
+    Genotypes{T}(p, d, T[], UInt8[0], T[])
+end
+
 function decompress(io::IOStream, v::Variant, h::Header;
     decompressed::Union{Nothing, AbstractVector{UInt8}}=nothing
     )
