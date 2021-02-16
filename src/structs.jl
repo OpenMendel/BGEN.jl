@@ -8,9 +8,7 @@ struct Header
     has_sample_ids::Bool
 end
 
-struct Samples
-    samples :: Vector{String}
-end
+const Samples = Vector{String}
 
 struct Index
     path::String

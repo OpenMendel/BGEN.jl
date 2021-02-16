@@ -59,6 +59,23 @@ function Variant(b::Bgen, offset::Integer)
     Variant(b.io, offset, h.compression, h.layout, h.n_samples)
 end
 
+@inline n_samples(v::Variant)::Int = v.n_samples
+@inline varid(v::Variant) = v.varid
+@inline rsid(v::Variant) = v.rsid
+@inline chrom(v::Variant) = v.chrom
+@inline pos(v::Variant)::Int = v.pos
+@inline n_alleles(v::Variant)::Int = v.n_alleles
+@inline alleles(v::Variant) = v.alleles
+
+# The following functions are valid only after calling `probabilities!()`
+# or `minor_allele_dosage!()`
+@inline phased(v::Variant) = v.genotypes[1].preamble.phased
+@inline min_ploidy(v::Variant) = v.genotypes[1].preamble.min_ploidy
+@inline max_ploidy(v::Variant) = v.genotypes[1].preamble.max_ploidy
+@inline ploidy(v::Variant) = v.genotypes[1].preamble.ploidy
+@inline bit_depth(v::Variant) = v.genotypes[1].preamble.bit_depth
+@inline missings(v::Variant) = v.genotypes[1].preamble.missings
+
 """
     destroy_genotypes!(v::Variant)
 Destroy any parsed genotype information.

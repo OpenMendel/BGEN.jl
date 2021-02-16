@@ -41,10 +41,10 @@ function decompress(io::IOStream, v::Variant, h::Header;
         decompressed = buffer_compressed
     elseif compression == 1
         decompressed = transcode(GzipDecompressor,
-            (buffer_compressed[1:compressed_length]))
+            (buffer_compressed))
     elseif compression == 2
         decompressed = transcode(ZstdDecompressor,
-            (buffer_compressed[1:compressed_length]))
+            (buffer_compressed))
     else
         @error "invalid compression"
     end
@@ -60,7 +60,7 @@ function parse_ploidy!(ploidy::AbstractVector{UInt8}, d::AbstractVector{UInt8},
     missings = Int[]
     mask = 0x3f # 63 in UInt8
     mask_8 = 0x8080808080808080 # UInt64, mask for missingness
-    if length(ploidy) == 0 # if constant ploidy, just scan for missingness
+    if ploidy[1] != 0 # if constant ploidy, just scan for missingness
         # check eight samples at a time
         idx1 = idx[1]
         if n_samples >= 8
@@ -126,11 +126,10 @@ function parse_preamble!(d::AbstractVector{UInt8}, idx::Vector{<:Integer},
         @error "invalid layout"
     end
     constant_ploidy = (min_ploidy == max_ploidy)
-
+    ploidy = Vector{UInt8}(undef, n_samples)
     if constant_ploidy
-        ploidy = UInt8[]
+        fill!(ploidy, max_ploidy)
     else
-        ploidy = Vector{UInt8}(undef, n_samples)
         fill!(ploidy, 0)
     end
     missings = []
@@ -167,6 +166,7 @@ function parse_layout1!(data::AbstractArray{<:AbstractFloat},
         # triple zero denotes missing for layout1
         if data[i] == 0.0 && data[i+1] == 0.0 && data[i+2] == 0.0
             data[i:i+2] .= NaN
+            push!(p.missings, (i-1) ÷ p.max_probs + 1)
         end
     end
     return data
@@ -386,12 +386,7 @@ function _get_prob_matrix(d::Vector{T}, p::Preamble) where T <: AbstractFloat
         current = 1
         ragged = Matrix{T}(undef, p.max_ploidy * p.max_probs, p.n_samples)
         fill!(ragged, NaN)
-        if p.min_ploidy == p.max_ploidy
-            itr = zip(1:p.n_samples, repeat([p.min_ploidy], p.n_samples))
-        else
-            itr = enumerate(p.ploidy)
-        end
-        for (i, v) in itr
+        for (i, v) in enumerate(p.ploidy)
             for j in 1:v
                 first = (j-1) * p.max_probs + 1
                 last = j * p.max_probs
@@ -484,6 +479,7 @@ function minor_allele_dosage!(b::Bgen, v::Variant;
         end
     end
 
+    @assert p.phased == 0
     @assert p.n_alleles == 2 "allele dosages are available for non-biallelic var"
 
     genotypes = v.genotypes[1]

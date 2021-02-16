@@ -1,10 +1,3 @@
-# from pathlib import Path
-# import re
-
-# import numpy as np
-
-import Base: isequal
-
 struct GenVariant
     chrom::String
     varid::String

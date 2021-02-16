@@ -14,11 +14,11 @@ header_ref = BGEN.Header(example_10bits)
 
     @testset "samples_separate" begin
     n_samples = 500
-    samples_test2 = BGEN.Samples(example_sample, n_samples)
+    samples_test2 = BGEN.get_samples(example_sample, n_samples)
     samples_correct = [(@sprintf "sample_%03d" i) for i in 1:n_samples]
-    @test all(samples_correct .== samples_test2.samples)
-    samples_test3 = BGEN.Samples(n_samples)
-    @test all([string(i) for i in 1:n_samples] .== samples_test3.samples)
+    @test all(samples_correct .== samples_test2)
+    samples_test3 = BGEN.get_samples(n_samples)
+    @test all([string(i) for i in 1:n_samples] .== samples_test3)
 end
 
 bgen = BGEN.Bgen(example_10bits)
@@ -27,7 +27,7 @@ bgen = BGEN.Bgen(example_10bits)
     @test bgen.header == header_ref
     n_samples = bgen.header.n_samples
     samples_correct = [(@sprintf "sample_%03d" i) for i in 1:n_samples]
-    @test all(samples_correct .== bgen.samples.samples)
+    @test all(samples_correct .== bgen.samples)
     variants = parse_variants(bgen)
     var = variants[4]
     @test length(variants) == 199

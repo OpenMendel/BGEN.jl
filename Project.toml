@@ -1,6 +1,6 @@
 name = "BGEN"
 uuid = "6db4b851-9beb-4b83-9d64-eb1cfb37721d"
-authors = ["Seyoon Ko <syko0507@snu.ac.kr> and contributors"]
+authors = ["Seyoon Ko <kos@ucla.edu> and contributors"]
 version = "0.1.0"
 
 [deps]

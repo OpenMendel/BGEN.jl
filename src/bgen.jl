@@ -18,16 +18,16 @@ function Bgen(path::AbstractString;
     header = Header(io)
     # read samples
     if sample_path !== nothing
-        samples = Samples(sample_path, header.n_samples)
+        samples = get_samples(sample_path, header.n_samples)
         # disregard sample names in the header if .sample file is provided
         if header.has_sample_ids
             header_sample_length = read(io, UInt32)
             read(io, header_sample_length)
         end
     elseif header.has_sample_ids
-        samples = Samples(io, header.n_samples)
+        samples = get_samples(io, header.n_samples)
     else
-        samples = Samples(header.n_samples)
+        samples = get_samples(header.n_samples)
     end
 
     offset = header.offset + 4 # location of the first variant_ids
@@ -45,16 +45,26 @@ function Bgen(path::AbstractString;
     Bgen(io, fsize, header, samples, idx)
 end
 
+@inline io(b::Bgen) = b.io
+Base.close(b::Bgen) = close(b.io)
+@inline fsize(b::Bgen)::Int = b.fsize
+@inline samples(b::Bgen) = b.samples
+@inline n_samples(b::Bgen)::Int = b.header.n_samples
+@inline n_variants(b::Bgen)::Int = b.header.n_samples
+const compression_modes = ["None", "Zlib", "Zstd"]
+@inline function compression(b::Bgen)
+    compression_modes[b.header.compression + 1]
+end
+
 """
-    iterator(b::Bgen; offsets=nothing)
-Retrieve a variant iterator for `b`. If offsets === nothing, it returns:
+    iterator(b::Bgen; offsets=nothing, from_bgen_start=nothing)
+Retrieve a variant iterator for `b`.
 
-- a `VariantIteratorFromStart` if `.bgi` file was not provided, or
-`from_bgen_start` is `true`.
-- `VariantIteratorFromOffsets` containing the offsets of each variant if `.bgi`
-was provided.
-- If `offsets` is provided, it returns a `VariantIteratorFromOffsets`.
-
+- If `offsets` is provided, or `.bgen.bgi` is provided and
+`from_bgen_start` is `false`, it returns a `VariantIteratorFromOffsets`,
+iterating over the list of offsets.
+- Otherwise, it returns a `VariantIteratorFromStart`, iterating from the start
+of bgen file to the end of it sequentially.
 """
 function iterator(b::Bgen; offsets=nothing, from_bgen_start=false)
     if offsets === nothing
@@ -83,74 +93,73 @@ Parse variants of the file.
 function parse_variants(b::Bgen; offsets=nothing, from_bgen_start=false)
     collect(iterator(b; offsets=offsets, from_bgen_start=from_bgen_start))
 end
-
-"""
-    rsids(b; vi=nothing, offsets=nothing)
-Get rsid list of all variants. If `vi === nothing`, it will return based on
-iterator(b; offsets=offsets).
-
-Arguments:
-
-- `bgen`: `Bgen` object
-- `vi`: a collection of `Variant`s
-- `offsets`: offset of each variant to be returned
-"""
-function rsids(b::Bgen; vi=nothing, offsets=nothing, from_bgen_start=false)
-    if vi === nothing
-        if b.idx !== nothing && offsets === nothing
-            return rsids(b.idx)
-        else
-            vi = iterator(b; offsets=offsets, from_bgen_start=from_bgen_start)
-        end
-    else
-        collect(v.rsid for v in vi)
-    end
+function parse_variants(v::VariantIterator)
+    collect(v)
 end
 
 """
-    chroms(bgen; vi=nothing)
-Get chromosome list of all variants. If `vi === nothing`, it will return based on
-iterator(b; offsets=offsets).
+    rsids(vi)
+    rsids(b; offsets=nothing, from_bgen_start=false)
+Get rsid list of all variants.
 
 Arguments:
-
-- `bgen`: `Bgen` object
 - `vi`: a collection of `Variant`s
+- `bgen`: `Bgen` object
+- `offsets`: offset of each variant to be returned
+"""
+function rsids(b::Bgen; offsets=nothing, from_bgen_start=false)
+    if b.idx !== nothing && offsets === nothing
+        return rsids(b.idx)
+    else
+        vi = iterator(b; offsets=offsets, from_bgen_start=from_bgen_start)
+        rsids(vi)
+    end
+end
+function rsids(vi::VariantIterator)
+    collect(v.rsid for v in vi)
+end
+
+"""
+    chroms(vi)
+    chroms(bgen; offsets=nothing)
+Get chromosome list of all variants.
+
+Arguments:
+- `vi`: a collection of `Variant`s
+- `bgen`: `Bgen` object
 - `offsets`: offset of each variant to be returned
 """
 function chroms(b::Bgen; vi=nothing, offsets=nothing, from_bgen_start=false)
-    if vi === nothing
-        if b.idx !== nothing && offsets === nothing
-            return chroms(b.idx)
-        else
-            vi = iterator(b; offsets=offsets, from_bgen_start=from_bgen_start)
-        end
+    if b.idx !== nothing && offsets === nothing
+        return chroms(b.idx)
     else
-        collect(v.chrom for v in vi)
+        vi = iterator(b; offsets=offsets, from_bgen_start=from_bgen_start)
+        chroms(vi)
     end
+end
+function chroms(vi::VariantIterator)
+    collect(v.chroms for v in vi)
 end
 
 """
-    positions(bgen; vi=nothing)
-Get base pair positions of all variants. If `vi === nothing`, it will return based on
-iterator(b; offsets=offsets).
+    positions(vi)
+    positions(bgen; offsets=nothing)
+Get base pair positions of all variants.
 
 Arguments:
-
-- `bgen`: `Bgen` object
 - `vi`: a collection of `Variant`s
+- `bgen`: `Bgen` object
 - `offsets`: offset of each variant to be returned
 """
-function positions(b::Bgen; vi=nothing, offsets=nothing,
-    from_bgen_start=false)::Vector{UInt32}
-
-    if vi === nothing
-        if b.idx !== nothing && offsets === nothing
-            return positions(b.idx)
-        else
-            vi = iterator(b; offsets=offsets, from_bgen_start=from_bgen_start)
-        end
+function positions(b::Bgen; offsets=nothing,
+    from_bgen_start=false)::Vector{Int}
+    if b.idx !== nothing && offsets === nothing
+        return positions(b.idx)
     else
-        collect(v.pos for v in vi)
+        vi = iterator(b; offsets=offsets, from_bgen_start=from_bgen_start)
+        positions(vi)
     end
+end
+function positions(vi::VariantIterator)
+    collect(v.pos for v in vi)
 end
