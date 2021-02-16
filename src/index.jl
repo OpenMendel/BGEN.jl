@@ -1,6 +1,6 @@
 function Index(path::AbstractString)
     db = SQLite.DB(path)
-    Index(path, db, [], [], [])
+    Index(path, db, [], [], [], [])
 end
 
 @inline function _check_idx(b::Bgen)
@@ -27,12 +27,13 @@ end
 """
     select_region(bgen, chrom; start=nothing, stop=nothing)
 Select variants from a region. Returns variant start offsets on the file.
+Returns a `VariantIteratorFromOffsets` object.
 """
 function select_region(b::Bgen, chrom::AbstractString;
         start=nothing, stop=nothing)
     _check_idx(b)
     offsets = select_region(b.idx, chrom; start=start, stop=stop)
-    [Variant(b, offset) for offset in offsets]
+    VariantIteratorFromOffsets(b, offsets)
 end
 
 function variant_by_rsid(idx::Index, rsid::AbstractString)
@@ -77,6 +78,17 @@ function variant_by_pos(b::Bgen, pos::Integer)
     _check_idx(b)
     offset = variant_by_pos(b.idx, pos)
     return Variant(b, offset)
+end
+
+function offsets(idx::Index)
+    if length(idx.offsets) != 0
+        return idx.offsets
+    end
+    q = "SELECT file_start_position FROM Variant"
+    r = (DBInterface.execute(idx.db, q) |> columntable)[1]
+    resize!(idx.offsets, length(r))
+    idx.offsets .= r
+    return r
 end
 
 function rsids(idx::Index)

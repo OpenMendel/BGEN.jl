@@ -15,9 +15,10 @@ end
 struct Index
     path::String
     db::SQLite.DB
+    offsets::Vector{UInt32}
     rsids::Vector{String}
     chroms::Vector{String}
-    positions::Vector{Int}
+    positions::Vector{UInt32}
 end
 
 struct Preamble
@@ -62,7 +63,7 @@ struct Bgen
 
     header::Header
     samples::Samples
-    variants::Vector{Variant}
-    # note: detailed information of variables stored in Variable struct
     idx::Union{Index, Nothing}
+    # note: detailed information of variables stored in Variable struct,
+    # accessed thru VariantIterator
 end

@@ -7,6 +7,9 @@ function Variant(io::IOStream, offset::Integer,
         compression::Integer, layout::Integer,
         expected_n::Integer)
     seek(io, offset)
+    if eof(io)
+        @error "reached end of file"
+    end
     if layout == 1
         n_samples = read(io, UInt32)
     else
@@ -50,6 +53,9 @@ end
 
 function Variant(b::Bgen, offset::Integer)
     h = b.header
+    if offset >= b.fsize
+        @error "reached end of file"
+    end
     Variant(b.io, offset, h.compression, h.layout, h.n_samples)
 end
 

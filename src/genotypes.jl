@@ -1,9 +1,22 @@
 const lookup = [i / 255 for i in 0:510]
 
+@inline function unsafe_load_UInt64(v::Vector{UInt8}, i::Integer)
+    p = convert(Ptr{UInt64}, pointer(v, i))
+    unsafe_load(p)
+end
+
+"""
+    Genotypes{T}(p::Preamble, d::Vector{UInt8}) where T <: AbstractFloat
+Create `Genotypes` struct from the preamble and decompressed data string.
+"""
 function Genotypes{T}(p::Preamble, d::Vector{UInt8}) where T <: AbstractFloat
     Genotypes{T}(p, d, T[], UInt8[0], T[])
 end
 
+"""
+    decompress(io, v, h; decompressed=nothing)
+Decompress the compressed byte string for genotypes.
+"""
 function decompress(io::IOStream, v::Variant, h::Header;
     decompressed::Union{Nothing, AbstractVector{UInt8}}=nothing
     )
@@ -38,6 +51,10 @@ function decompress(io::IOStream, v::Variant, h::Header;
     return decompressed
 end
 
+"""
+    parse_ploidy!(ploidy, d, idx, n_samples)
+Parse ploidy part of the preamble.
+"""
 function parse_ploidy!(ploidy::AbstractVector{UInt8}, d::AbstractVector{UInt8},
     idx::Vector{<:Integer}, n_samples::Integer)
     missings = Int[]
@@ -45,16 +62,18 @@ function parse_ploidy!(ploidy::AbstractVector{UInt8}, d::AbstractVector{UInt8},
     mask_8 = 0x8080808080808080 # UInt64, mask for missingness
     if length(ploidy) == 0 # if constant ploidy, just scan for missingness
         # check eight samples at a time
-        @inbounds for i in 0:8:(n_samples - (n_samples % 8) - 1)
-            if mask_8 & reinterpret(UInt64,
-                @view(d[idx[1]+i:(idx[1]+i+7)]))[1] != 0
-                for j in (i+1):(i+8)
-                    if d[idx[1] + j - 1] & 0x80 != 0
-                        push!(missings, j)
+        idx1 = idx[1]
+        if n_samples >= 8
+            @inbounds for i in 0:8:(n_samples - (n_samples % 8) - 1)
+                if mask_8 & unsafe_load_UInt64(d, idx1 + i) != 0
+                    for j in (i+1):(i+8)
+                        if d[idx[1] + j - 1] & 0x80 != 0
+                            push!(missings, j)
+                        end
                     end
                 end
-            end
 
+            end
         end
         # remainder not in multiple of 8
         @inbounds for j in (n_samples - (n_samples % 8) + 1):n_samples
@@ -79,6 +98,10 @@ end
         n_alleles : binomial(max_ploidy + n_alleles - 1, n_alleles - 1)
 end
 
+"""
+    parse_preamble!(d, idx, h, v)
+Parse preamble of genotypes.
+"""
 function parse_preamble!(d::AbstractVector{UInt8}, idx::Vector{<:Integer},
         h::Header, v::Variant)
     if h.layout == 1
@@ -124,6 +147,10 @@ function parse_preamble!(d::AbstractVector{UInt8}, idx::Vector{<:Integer},
         bit_depth, max_probs, missings)
 end
 
+"""
+    parse_layout1!(data, p, d, idx)
+Parse probabilities from layout 1.
+"""
 function parse_layout1!(data::AbstractArray{<:AbstractFloat},
     p::Preamble, d::AbstractArray{UInt8}, idx::Vector{<:Integer}
     )
@@ -145,6 +172,10 @@ function parse_layout1!(data::AbstractArray{<:AbstractFloat},
     return data
 end
 
+"""
+   parse_layout2!(data, p, d, idx)
+Parse probabilities from layout 2.
+"""
 function parse_layout2!(data::AbstractArray{<:AbstractFloat},
     p::Preamble, d::AbstractArray{UInt8}, idx::Vector{<:Integer}
     )
@@ -196,7 +227,7 @@ function parse_layout2!(data::AbstractArray{<:AbstractFloat},
             remainder = 1.0
             @inbounds for i in 1:n_probs
                 j = idx1 + bit_idx ÷ 8
-                prob = ((reinterpret(UInt64, d[j:j+7])[1] >> (bit_idx % 8)) &
+                @inbounds prob = (unsafe_load_UInt64(d, j) >> (bit_idx % 8) &
                     probs_mask) * factor
                 bit_idx += p.bit_depth
                 remainder -= prob
@@ -215,26 +246,37 @@ function parse_layout2!(data::AbstractArray{<:AbstractFloat},
     return data
 end
 
+"""
+    ref_dosage_fast!(data, p, d, idx, layout)
+Dosage retrieval for 8-bit biallele case, no floating-point operations!
+"""
 function ref_dosage_fast!(data::Vector{<:AbstractFloat}, p::Preamble,
     d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8
     )
     @assert layout == 2
     @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy
     idx1 = idx[1]
-    @inbounds for n in 1:2:(p.n_samples - p.n_samples % 2)
-        idx_base = idx1 + ((n-1) >> 1) << 2
-        data[n] = (lookup[d[idx_base] + 1] * 2) + lookup[d[idx_base + 1] + 1]
-        data[n+1] = (lookup[d[idx_base + 2] + 1] * 2) +
-                        lookup[d[idx_base + 3] + 1]
+    if p.n_samples >= 2
+        for n in 1:2:(p.n_samples - p.n_samples % 2)
+            idx_base = idx1 + ((n-1) >> 1) << 2
+            data[n] = lookup[(convert(UInt16, d[idx_base]) << 1) +
+                                d[idx_base + 1] + 1]
+            data[n+1] = lookup[(convert(UInt16, d[idx_base + 2]) << 1) +
+                                d[idx_base + 3] + 1]
+        end
     end
     if p.n_samples % 2 == 1
-        idx_base = idx1 + ((p.n_samples - 1) * 2)
-        data[n_samples] = (lookup[d[idx_base] + 1] * 2) +
-                            lookup[d[idx_base + 1] + 1]
+        idx_base = idx1 + ((p.n_samples - 1) << 1)
+        data[n_samples] = lookup[(convert(UInt16, d[idx_base]) << 1) +
+                            d[idx_base + 1] + 1]
     end
     return data
 end
 
+"""
+    ref_dosage_slow!(data, p, d, idx, layout)
+Dosage computation for general case.
+"""
 function ref_dosage_slow!(data::Vector{<:AbstractFloat}, p::Preamble,
     d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8
     )
@@ -244,52 +286,62 @@ function ref_dosage_slow!(data::Vector{<:AbstractFloat}, p::Preamble,
 
     maxval = 2 ^ p.bit_depth - 1
     factor = layout == 2 ? 1.0 / maxval : 1.0 / 32768
-    probs_mask = 0xFFFFFFFFFFFFFFFF >> (64 - bit_depth)
+    probs_mask = 0xFFFFFFFFFFFFFFFF >> (64 - p.bit_depth)
     bit_idx = 0
-    for n = 1:n_samples
+    for n = 1:p.n_samples
         if p.max_ploidy != p.min_ploidy
             ploidy = ploidy[n]
             half_ploidy = ploidy ÷ 2
         end
         j = idx[1] + bit_idx ÷ 8
-        hom = (reinterpret(UInt64, d[j:j+7])[1] >> (bit_idx % 8)) & probs_mask
+        hom = (unsafe_load_UInt64(d, j) >> (bit_idx % 8)) & probs_mask
         bit_idx += p.bit_depth
         j = idx[1] + bit_idx ÷ 8
-        het = (reinterpret(UInt64, d[j:j+7])[1] >> (bit_idx % 8)) & probs_mask
+        het = (unsafe_load_UInt64(d, j) >> (bit_idx % 8)) & probs_mask
         bit_idx += p.bit_depth
         data[n] = ((hom * ploidy) + (het * half_ploidy)) * factor
-    end
-    if layout == 1
-        # layout 1 also stores hom_alt probability, and it indicates missing by
-        # triple zero.
-        j = idx[1] + bit_idx ÷ 8
-        hom_alt = (reinterpret(UInt64, d[j:j+7])[1] >> (bit_idx % 8)) & probs_mask
-        bit_idx += p.bit_depth
-        if hom == 0 && alt == 0 && hom_alt == 0
-            push!(p.missings, n)
+        if layout == 1
+            # layout 1 also stores hom_alt probability, and it indicates missing by
+            # triple zero.
+            j = idx[1] + bit_idx ÷ 8
+            hom_alt = (unsafe_load_UInt64(d, j) >> (bit_idx % 8)) & probs_mask
+            bit_idx += p.bit_depth
+            if hom == 0 && het == 0 && hom_alt == 0
+                push!(p.missings, n)
+            end
         end
     end
     return data
 end
 
+"""
+    alt_dosage(data, p)
+Switch ref allele dosage `data` to alt allele dosage.
+"""
 function alt_dosage!(data::Vector{<:AbstractFloat}, p::Preamble)
-    @inbounds for n in 1:8:(p.n_samples - p.n_samples % 8)
-        data[n]     = 2.0 - data[n]
-        data[n + 1] = 2.0 - data[n + 1]
-        data[n + 2] = 2.0 - data[n + 2]
-        data[n + 3] = 2.0 - data[n + 3]
-        data[n + 4] = 2.0 - data[n + 4]
-        data[n + 5] = 2.0 - data[n + 5]
-        data[n + 6] = 2.0 - data[n + 6]
-        data[n + 7] = 2.0 - data[n + 7]
+    if p.n_samples >= 8
+        @inbounds for n in 1:8:(p.n_samples - p.n_samples % 8)
+            data[n]     = 2.0 - data[n]
+            data[n + 1] = 2.0 - data[n + 1]
+            data[n + 2] = 2.0 - data[n + 2]
+            data[n + 3] = 2.0 - data[n + 3]
+            data[n + 4] = 2.0 - data[n + 4]
+            data[n + 5] = 2.0 - data[n + 5]
+            data[n + 6] = 2.0 - data[n + 6]
+            data[n + 7] = 2.0 - data[n + 7]
+        end
     end
     @inbounds for n in (p.n_samples - p.n_samples % 8 + 1):p.n_samples
         data[n] = 2.0 - data[n]
     end
 end
 
+"""
+    find_minor_allele(data, p)
+Find minor allele index, returns 1 (ref) or 2 (alt)
+"""
 function find_minor_allele(data::Vector{<:AbstractFloat}, p::Preamble)
-    batchsize = 256
+    batchsize = 100
     increment = max(p.n_samples ÷ batchsize, 1)
     total = 0.0
     freq = 0.0
@@ -297,7 +349,8 @@ function find_minor_allele(data::Vector{<:AbstractFloat}, p::Preamble)
         for n in idx2:increment:p.n_samples
             total += data[n]
         end
-        freq = total / (batchsize * (idx2) * 2)
+        freq = total / (batchsize * idx2 * 2)
+        @assert 0 <= freq <= 1
         if minor_certain(freq, batchsize * idx2, 5.0)
             break
         end
@@ -306,35 +359,6 @@ function find_minor_allele(data::Vector{<:AbstractFloat}, p::Preamble)
         return 1
     else
         return 2
-    end
-end
-
-function minor_allele_dosage!(data::AbstractArray{<:AbstractFloat},
-    io::IOStream, h::Header, v::Variant;
-    decompressed::Union{Nothing, AbstractVector{UInt8}}=nothing
-    )
-    if decompressed === nothing || length(decompressed) == 0
-        decompressed = decompress(io, v, h)
-    end
-    idx = [1]
-    p = parse_preamble!(decompressed, idx, h, v)
-    data_size = p.n_samples
-    @assert length(data) == data_size "incorrect length of data"
-
-    if p.max_probs > 0 && length(p.dosage) == p.n_samples
-        return p.dosage
-    end
-
-    if p.max_ploidy == p.min_ploidy && p.max_probs == 3 && p.bit_depth == 8 &&
-        v.layout == 2
-        ref_dosage_fast!(data, p, decompressed, idx, v.layout)
-    else
-        ref_dosage_slow!(data, p, decompressed, idx, v.layout)
-    end
-
-    minor_idx = find_minor_allele(data, p)
-    if minor_ids != 1
-        alt_dosage!(data, p)
     end
 end
 
@@ -356,7 +380,42 @@ end
     end
 end
 
-function parse_probs!(b::Bgen, v::Variant; T=Float64, clear_decompressed=false)
+function _get_prob_matrix(d::Vector{T}, p::Preamble) where T <: AbstractFloat
+    reshaped = reshape(d, p.max_probs, :)
+    if p.phased == 1
+        current = 1
+        ragged = Matrix{T}(undef, p.max_ploidy * p.max_probs, p.n_samples)
+        fill!(ragged, NaN)
+        if p.min_ploidy == p.max_ploidy
+            itr = zip(1:p.n_samples, repeat([p.min_ploidy], p.n_samples))
+        else
+            itr = enumerate(p.ploidy)
+        end
+        for (i, v) in itr
+            for j in 1:v
+                first = (j-1) * p.max_probs + 1
+                last = j * p.max_probs
+                ragged[first:last, i] = reshaped[:, current]
+                current += 1
+            end
+        end
+        return ragged
+    else
+        return reshaped
+    end
+end
+
+"""
+    probabilities!(b::Bgen, v::Variant; T=Float64, clear_decompressed=false)
+Given a `Bgen` struct and a `Variant`, compute probabilities.
+The result is stored inside `v.genotypes[1].probs`, which can be cleared using
+`clear!(v)`.
+
+- T: type for the resutls
+- `clear_decompressed`: clears decompressed byte string after execution if set `true`
+"""
+function probabilities!(b::Bgen, v::Variant;
+        T=Float64, clear_decompressed=false)
     io, h = b.io, b.header
     if length(v.genotypes) == 0 || length(v.genotypes[1].decompressed) == 0
         decompressed = decompress(io, v, h)
@@ -378,8 +437,8 @@ function parse_probs!(b::Bgen, v::Variant; T=Float64, clear_decompressed=false)
     data_size = get_data_size(p, h.layout)
 
     # skip parsing if already parsed
-    if length(genotypes.probs) == data_size
-        return genotypes.probs
+    if length(genotypes.probs) >= data_size
+        _get_prob_matrix(genotypes.probs, p)
     end
     resize!(genotypes.probs, data_size)
     if h.layout == 1
@@ -390,10 +449,20 @@ function parse_probs!(b::Bgen, v::Variant; T=Float64, clear_decompressed=false)
     if clear_decompressed
         clear_decompressed!(genotypes)
     end
-    return genotypes.probs
+    return _get_prob_matrix(genotypes.probs, p)
 end
 
-function parse_dosage!(b::Bgen, v::Variant; T=Float64, clear_decompressed=false)
+"""
+    minor_allele_dosage!(b::Bgen, v::Variant; T=Float64, clear_decompressed=false)
+Given a `Bgen` struct and a `Variant`, compute minor allele dosage.
+The result is stored inside `v.genotypes[1].dose`, which can be cleared using
+`clear!(v)`.
+
+- T: type for the resutls
+- `clear_decompressed`: clears decompressed byte string after execution if set `true`
+"""
+function minor_allele_dosage!(b::Bgen, v::Variant;
+        T=Float64, clear_decompressed=false)
     io, h = b.io, b.header
     # just return it if already computed
     if length(v.genotypes) == 1 && length(v.genotypes[1].dose) == h.n_samples
@@ -408,9 +477,11 @@ function parse_dosage!(b::Bgen, v::Variant; T=Float64, clear_decompressed=false)
     if length(v.genotypes) == 0
         p = parse_preamble!(decompressed, idx, h, v)
         push!(v.genotypes, Genotypes{T}(p, decompressed))
-    elseif h.layout == 2
+    else
         p = v.genotypes[1].preamble
-        idx[1] += 10 + h.n_samples
+        if h.layout == 2
+            idx[1] += 10 + h.n_samples
+        end
     end
 
     @assert p.n_alleles == 2 "allele dosages are available for non-biallelic var"
@@ -418,7 +489,8 @@ function parse_dosage!(b::Bgen, v::Variant; T=Float64, clear_decompressed=false)
     genotypes = v.genotypes[1]
 
     resize!(genotypes.dose, h.n_samples)
-    if p.max_ploidy == p.min_ploidy && p.max_probs == 3 && p.bit_depth == 8
+    if p.max_ploidy == p.min_ploidy && p.max_probs == 3 && p.bit_depth == 8 &&
+            b.header.layout == 2
         ref_dosage_fast!(genotypes.dose, p, decompressed, idx, h.layout)
     else
         ref_dosage_slow!(genotypes.dose, p, decompressed, idx, h.layout)
@@ -435,6 +507,12 @@ function parse_dosage!(b::Bgen, v::Variant; T=Float64, clear_decompressed=false)
     return genotypes.dose
 end
 
+"""
+    clear!(g::Genotypes)
+    clear!(v::Variant)
+Clears cached decompressed byte representation, probabilities, and dose.
+If `Variant` is given, it removes the corresponding `.genotypes` altogether.
+"""
 function clear!(g::Genotypes)
     resize!(g.decompressed, 0)
     resize!(g.probs, 0)
@@ -442,6 +520,10 @@ function clear!(g::Genotypes)
     return
 end
 
+"""
+    clear_decompressed!(g::Genotypes)
+Clears cached decompressed byte representation.
+"""
 function clear_decompressed!(g::Genotypes)
     resize!(g.decompressed, 0)
     return

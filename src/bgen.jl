@@ -4,15 +4,13 @@
 Read in the Bgen file information: header, list of samples.
 Variants and genotypes are read separately.
 
-- `sample_path`: path to  ".sample" file, if applicable
-- `idx_path`: path to ".bgi" file, if applicable
-- `parse_variants`: option to load variant information in memory
-when a Bgen file is opened.
+- `path`: path to the ".bgen" file.
+- `sample_path`: path to  ".sample" file, if applicable.
+- `idx_path`: path to ".bgi" file, defaults to `path * ".bgi`.
 """
 function Bgen(path::AbstractString;
     sample_path = nothing,
-    idx_path = path * ".bgi",
-    parse_variants = true
+    idx_path = isfile(path * ".bgi") ? path * ".bgi" : nothing
     )
     io = open(path)
     fsize = filesize(path)
@@ -38,101 +36,121 @@ function Bgen(path::AbstractString;
         if isfile(idx_path)
             idx = Index(idx_path)
         else
-            idx = nothing
+            @error "$idx_path is not a file"
         end
     else
         idx = nothing
     end
 
-    if parse_variants
-        variants = parse_all_variants(io, fsize, header)
+    Bgen(io, fsize, header, samples, idx)
+end
+
+"""
+    iterator(b::Bgen; offsets=nothing)
+Retrieve a variant iterator for `b`. If offsets === nothing, it returns:
+
+- a `VariantIteratorFromStart` if `.bgi` file was not provided, or
+`from_bgen_start` is `true`.
+- `VariantIteratorFromOffsets` containing the offsets of each variant if `.bgi`
+was provided.
+- If `offsets` is provided, it returns a `VariantIteratorFromOffsets`.
+
+"""
+function iterator(b::Bgen; offsets=nothing, from_bgen_start=false)
+    if offsets === nothing
+        if b.idx === nothing || from_bgen_start
+            return VariantIteratorFromStart(b)
+        else
+            return VariantIteratorFromOffsets(b, BGEN.offsets(b.idx))
+        end
     else
-        variants = Variant[]
+        return VariantIteratorFromOffsets(b, offsets)
     end
-    Bgen(io, fsize, header, samples, variants, idx)
 end
 
 """
     offset_first_variant(x)
-returns the start of the first variant
+returns the offset of the first variant
 """
 @inline function offset_first_variant(x::Bgen)
     return x.header.offset + 4
 end
 
 """
-    get_variant(io, fsize, h, offset)
-    get_variant(x::Bgen, offset::Integer)
-Parse a variant starting at position `offset`.
+    parse_variants(b::Bgen; offsets=offsets)
+Parse variants of the file.
 """
-function get_variant(io::IOStream, fsize::Integer, h::Header, offset::Integer)
-    if eof(io) || offset >= fsize
-        @error "reached end of file"
-    end
-    Variant(io, offset, h.compression, h.layout, h.n_samples)
-end
-
-function get_variant(x::Bgen, offset::Integer)
-    get_variant(x.io, x.fsize, x.header, offset)
+function parse_variants(b::Bgen; offsets=nothing, from_bgen_start=false)
+    collect(iterator(b; offsets=offsets, from_bgen_start=from_bgen_start))
 end
 
 """
-    parse_all_variants(io, fsize, h)
-    parse_all_variants(x::Bgen)
-Parse all variants (but not genotypes) of the file
-"""
-function parse_all_variants(io::IOStream, fsize::Integer, h::Header)
-    offset = offset_first_variant(h)
-    variants = Vector{Variant}(undef, h.n_variants)
-    for i in 1:h.n_variants
-        variants[i] = get_variant(io, fsize, h, offset)
-        offset = variants[i].next_var_offset
-    end
-    variants
-end
+    rsids(b; vi=nothing, offsets=nothing)
+Get rsid list of all variants. If `vi === nothing`, it will return based on
+iterator(b; offsets=offsets).
 
-function parse_all_variants(x::Bgen)
-    parse_all_variants(x.io, x.fsize, x.header)
-end
+Arguments:
 
+- `bgen`: `Bgen` object
+- `vi`: a collection of `Variant`s
+- `offsets`: offset of each variant to be returned
 """
-    rsids(bgen)
-Get rsid list of all variants
-"""
-function rsids(b::Bgen)
-    if b.idx !== nothing
-        return rsids(b.idx)
-    elseif length(b.variants) != 0
-        return [v.rsid for v in b.variants]
+function rsids(b::Bgen; vi=nothing, offsets=nothing, from_bgen_start=false)
+    if vi === nothing
+        if b.idx !== nothing && offsets === nothing
+            return rsids(b.idx)
+        else
+            vi = iterator(b; offsets=offsets, from_bgen_start=from_bgen_start)
+        end
     else
-        @error "need either .bgi file or parsed all variants"
+        collect(v.rsid for v in vi)
     end
 end
 
 """
-    chroms(bgen)
-Get chromosome list of all variants
+    chroms(bgen; vi=nothing)
+Get chromosome list of all variants. If `vi === nothing`, it will return based on
+iterator(b; offsets=offsets).
+
+Arguments:
+
+- `bgen`: `Bgen` object
+- `vi`: a collection of `Variant`s
+- `offsets`: offset of each variant to be returned
 """
-function chroms(b::Bgen)
-    if b.idx !== nothing
-        return chroms(b.idx)
-    elseif length(b.variants) != 0
-        return [v.chrom for v in b.variants]
+function chroms(b::Bgen; vi=nothing, offsets=nothing, from_bgen_start=false)
+    if vi === nothing
+        if b.idx !== nothing && offsets === nothing
+            return chroms(b.idx)
+        else
+            vi = iterator(b; offsets=offsets, from_bgen_start=from_bgen_start)
+        end
     else
-        @error "need either .bgi file or parsed all variants"
+        collect(v.chrom for v in vi)
     end
 end
 
 """
-    positions(idx)
-Get base pair positions of all variants
+    positions(bgen; vi=nothing)
+Get base pair positions of all variants. If `vi === nothing`, it will return based on
+iterator(b; offsets=offsets).
+
+Arguments:
+
+- `bgen`: `Bgen` object
+- `vi`: a collection of `Variant`s
+- `offsets`: offset of each variant to be returned
 """
-function positions(b::Bgen)
-    if b.idx !== nothing
-        return positions(b.idx)
-    elseif length(b.variants) != 0
-        return [v.pos for v in b.variants]
+function positions(b::Bgen; vi=nothing, offsets=nothing,
+    from_bgen_start=false)::Vector{UInt32}
+
+    if vi === nothing
+        if b.idx !== nothing && offsets === nothing
+            return positions(b.idx)
+        else
+            vi = iterator(b; offsets=offsets, from_bgen_start=from_bgen_start)
+        end
     else
-        @error "need either .bgi file or parsed all variants"
+        collect(v.pos for v in vi)
     end
 end
