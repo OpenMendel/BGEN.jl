@@ -15,5 +15,6 @@ deploydocs(
     repo   = "github.com/OpenMendel/BGEN.jl.git",
     target = "build",
     deps   = nothing,
-    make   = nothing
+    make   = nothing,
+    devbranch = "main"
 )
