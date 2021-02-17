@@ -3,7 +3,11 @@
 Routines for reading compressed storage of genotyped or imputed markers
 
 [*Genome-wide association studies (GWAS)*](https://en.wikipedia.org/wiki/Genome-wide_association_study) data with imputed markers are often saved in the [**BGEN format**](https://www.well.ox.ac.uk/~gav/bgen_format/) or `.bgen` file.
-It can store both hard calls and imputed data, unphased genotypes and phased haplotypes. Each variant is compressed separately to make indexing simple. An index file (`.bgen.bgi`) may be provided to access each variant easily. [UK Biobank](https://www.ukbiobank.ac.uk/) uses this format for genome-wide imputed genotypes.
+It can store hard calls and imputed data, unphased genotypes, and phased haplotypes. Each variant is compressed separately to make indexing simple. An index file (`.bgen.bgi`) may be provided to access each variant easily. [UK Biobank](https://www.ukbiobank.ac.uk/) uses this format for genome-wide imputed genotypes.
+
+A BGEN-formatted file consists of a header block containing general information, including an optional sample identifier block, followed by a series of variant blocks containing identification data of variants and genotype data representing probabilities for haplotypes or genotypes. Genotype data is often compressed using [zlib](http://www.zlib.net/) or [Zstandard](https://facebook.github.io/zstd/). 
+
+This package provides tools for iterating over the variants and parsing genotype data efficiently. It has been optimized for UK Biobank's zlib-compressed 8-bit genotype probabilities.
 
 ## Installation
 
@@ -37,6 +41,10 @@ versioninfo()
 ```julia
 using BGEN, Glob
 ```
+
+    ┌ Info: Precompiling BGEN [6db4b851-9beb-4b83-9d64-eb1cfb37721d]
+    └ @ Base loading.jl:1278
+
 
 ## Example Data
 
@@ -900,6 +908,9 @@ After that, one may access genotype information using the following functions, a
 - `bit_depth(v::Variant)` : number of bits used to represent a probability value
 - `missings(v::Variant)` : list of samples data is missing
 
+These functions are allowed after calling `minor_allele_dosage!()`:
+- `minor_allele(v::Variant)`
+- `major_allele(v::Variant)`
 
 If the data are not phased, `probabilities!(b, v)[i, j]` represents the probability of genotype `i` for sample `j`. Each column sums up to one. The genotypes are in [colex-order](https://en.wikipedia.org/wiki/Lexicographic_order#Colexicographic_order) of allele counts. For example, for three alleles with ploidy 3:
 
@@ -952,7 +963,7 @@ On the other hand, if the data are phased, `probabilities!(b, v)[i, j]` represen
 ```julia
 b2 = Bgen(BGEN.datadir("complex.bgen"))
 vs = parse_variants(b2)
-probabilities!(b2, vs[3])
+p = probabilities!(b2, vs[3])
 ```
 
 
@@ -965,6 +976,8 @@ probabilities!(b2, vs[3])
      NaN    1.0  0.0  1.0
 
 
+
+We can confirm the phasedness and ploidy of each sample as follows.
 
 
 ```julia
@@ -1060,5 +1073,24 @@ n_alleles(variants[1])
 
 
 ```julia
-
+minor_allele(variants[1])
 ```
+
+
+
+
+    "A"
+
+
+
+
+```julia
+major_allele(variants[1])
+```
+
+
+
+
+    "G"
+
+
