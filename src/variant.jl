@@ -76,6 +76,24 @@ end
 @inline bit_depth(v::Variant) = v.genotypes[1].preamble.bit_depth
 @inline missings(v::Variant) = v.genotypes[1].preamble.missings
 
+# The below are valid after calling `minor_allele_dosage!()`
+@inline function minor_allele(v::Variant)
+    midx = v.genotypes[1].minor_idx[1]
+    if midx == 0
+        @error "`minor_allele_dosage!()` must be called before `minor_allele()`"
+    else
+        v.alleles[v.genotypes[1].minor_idx[1]]
+    end
+end
+@inline function major_allele(v::Variant)
+    midx = v.genotypes[1].minor_idx[1]
+    if midx == 0
+        @error "`minor_allele_dosage!()` must be called before `minor_allele()`"
+    else
+        v.alleles[3 - v.genotypes[1].minor_idx[1]]
+    end
+end
+
 """
     destroy_genotypes!(v::Variant)
 Destroy any parsed genotype information.

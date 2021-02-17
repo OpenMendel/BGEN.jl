@@ -4,7 +4,7 @@ import Base: length, getindex, setindex, firstindex, lastindex, eltype, size,
 import Tables: columntable
 export Bgen, Samples, Variant, Genotypes, Index
 export io, fsize, samples, n_samples, n_variants, compression
-export varid, rsid, chrom, pos, n_alleles, alleles
+export varid, rsid, chrom, pos, n_alleles, alleles, minor_allele, major_allele
 export phased, min_ploidy, max_ploidy, ploidy, bit_depth, missings
 export parse_variants, iterator, probabilities!, minor_allele_dosage!, clear!
 export select_region, variant_by_rsid, variant_by_pos, rsids, chroms, positions
