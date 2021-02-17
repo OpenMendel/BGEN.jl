@@ -50,7 +50,7 @@ Base.close(b::Bgen) = close(b.io)
 @inline fsize(b::Bgen)::Int = b.fsize
 @inline samples(b::Bgen) = b.samples
 @inline n_samples(b::Bgen)::Int = b.header.n_samples
-@inline n_variants(b::Bgen)::Int = b.header.n_samples
+@inline n_variants(b::Bgen)::Int = b.header.n_variants
 const compression_modes = ["None", "Zlib", "Zstd"]
 @inline function compression(b::Bgen)
     compression_modes[b.header.compression + 1]

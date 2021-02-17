@@ -42,10 +42,6 @@ versioninfo()
 using BGEN, Glob
 ```
 
-    ┌ Info: Precompiling BGEN [6db4b851-9beb-4b83-9d64-eb1cfb37721d]
-    └ @ Base loading.jl:1278
-
-
 ## Example Data
 
 The example datafiles are stored in `/data` directory of this repository. It can be accessed through the function `BGEN.datadir()`. 
@@ -238,7 +234,7 @@ n_variants(b)
 
 
 
-    500
+    199
 
 
 
@@ -389,7 +385,7 @@ Each element of `VariantIterator` is a `Variant`, containing the information of 
 
 Merely the basic information of a variant is parsed for creating a `Variant` object. Nothing is decompressed, and genotype probabilities are not yet parsed yet. Decompression happens lazily, and is delayed until when we try to compute genotype probabilites or minor allele dosages (to be discussed later).
 
-Since `.bgen.bgi` file is provided, this following order is based on the index file. 
+Since `.bgen.bgi` file is provided, the following order is based on the index file, sorted by genomic location.
 
 
 ```julia
@@ -825,7 +821,7 @@ length(select_region(b, "01"))
 
 
 
-We can see that the first variant since position 4950 at chromosome 01 is "RSID_5":  
+We can see that the first variant since position 5000 at chromosome 01 is "RSID_5":  
 
 
 ```julia
@@ -853,7 +849,7 @@ length(select_region(b, "01"; start=5000, stop=50000))
 
 
 
-Finally, one may use the `parse_variants()` function to retrieve the variant information as a `Vector{Variant}`. This is equivalent to calling `collect()` on the corresponding `VariantIterator`. 
+Finally, one may use the `parse_variants()` function to retrieve the variant information as a `Vector{Variant}`. This is equivalent to calling `collect()` on the corresponding `VariantIterator`. It takes the same arguments as `iterator()`. This keeps all the information of variants in-memory. If the size of bgen file is too large, you might want to avoid this.
 
 
 ```julia
