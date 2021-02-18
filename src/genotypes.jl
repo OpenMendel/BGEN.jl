@@ -448,19 +448,27 @@ function probabilities!(b::Bgen, v::Variant;
 end
 
 """
-    minor_allele_dosage!(b::Bgen, v::Variant; T=Float64, clear_decompressed=false)
+    minor_allele_dosage!(b::Bgen, v::Variant; T=Float64,
+    mean_impute=false, clear_decompressed=false)
 Given a `Bgen` struct and a `Variant`, compute minor allele dosage.
 The result is stored inside `v.genotypes[1].dose`, which can be cleared using
 `clear!(v)`.
 
-- T: type for the resutls
+- `T`: type for the results
+- `mean_impute`: impute missing values with the mean of nonmissing values
 - `clear_decompressed`: clears decompressed byte string after execution if set `true`
 """
 function minor_allele_dosage!(b::Bgen, v::Variant;
-        T=Float64, clear_decompressed=false)
+        T=Float64, mean_impute=false, clear_decompressed=false)
     io, h = b.io, b.header
     # just return it if already computed
     if length(v.genotypes) == 1 && length(v.genotypes[1].dose) == h.n_samples
+        genotypes = v.genotypes[1]
+        p = genotypes.preamble
+        genotypes.dose[p.missings] .= NaN
+        if mean_impute
+            genotypes.dose[p.missings] .= mean(filter(!isnan, genotypes.dose))
+        end
         return v.genotypes[1].dose
     end
     if length(v.genotypes) == 0 || length(v.genotypes[1].decompressed) == 0
@@ -496,7 +504,11 @@ function minor_allele_dosage!(b::Bgen, v::Variant;
     if genotypes.minor_idx[1] != 1
         alt_dosage!(genotypes.dose, p)
     end
+
     genotypes.dose[p.missings] .= NaN
+    if mean_impute
+        genotypes.dose[p.missings] .= mean(filter(!isnan, genotypes.dose))
+    end
     if clear_decompressed
         clear_decompressed!(genotypes)
     end

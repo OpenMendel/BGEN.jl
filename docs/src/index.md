@@ -42,6 +42,10 @@ versioninfo()
 using BGEN, Glob
 ```
 
+    ┌ Info: Precompiling BGEN [6db4b851-9beb-4b83-9d64-eb1cfb37721d]
+    └ @ Base loading.jl:1278
+
+
 ## Example Data
 
 The example datafiles are stored in `/data` directory of this repository. It can be accessed through the function `BGEN.datadir()`. 
@@ -1088,5 +1092,45 @@ major_allele(variants[1])
 
 
     "G"
+
+
+
+`minor_allele_dosage!()` supports a keyword argument `mean_impute`, which imputes missing value with the mean of the non-missing values.
+
+
+```julia
+minor_allele_dosage!(b, variants[1]; T=Float64, mean_impute=true)
+```
+
+
+
+
+    500-element Array{Float64,1}:
+     0.3958112303037447
+     0.06274509803921569
+     0.08235294117647059
+     0.9803921568627451
+     0.09019607843137255
+     0.1411764705882353
+     1.0745098039215686
+     0.054901960784313725
+     0.10980392156862745
+     0.12156862745098039
+     0.1411764705882353
+     0.21568627450980393
+     0.08235294117647059
+     ⋮
+     0.09411764705882353
+     0.10196078431372549
+     0.027450980392156862
+     0.9647058823529412
+     0.0
+     1.011764705882353
+     0.043137254901960784
+     0.06274509803921569
+     1.0431372549019609
+     0.058823529411764705
+     1.8941176470588235
+     0.9921568627450981
 
 

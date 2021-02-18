@@ -2,6 +2,7 @@ module BGEN
 import Base: length, getindex, setindex, firstindex, lastindex, eltype, size,
             iterate, close
 import Tables: columntable
+import Statistics: mean
 export Bgen, Samples, Variant, Genotypes, Index
 export io, fsize, samples, n_samples, n_variants, compression
 export varid, rsid, chrom, pos, n_alleles, alleles, minor_allele, major_allele
