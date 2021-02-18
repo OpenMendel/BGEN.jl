@@ -19,7 +19,7 @@ The package has not yet been registered and must be installed using the reposito
 It can be done with the following Julia code:
 ```julia
 using Pkg
-pkg"https://github.com/OpenMendel/BGEN.jl"
+pkg"add https://github.com/OpenMendel/BGEN.jl"
 ```
 
 
