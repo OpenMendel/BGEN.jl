@@ -2,12 +2,56 @@
 
 Routines for reading compressed storage of genotyped or imputed markers
 
+## The BGEN Format
+
 [*Genome-wide association studies (GWAS)*](https://en.wikipedia.org/wiki/Genome-wide_association_study) data with imputed markers are often saved in the [**BGEN format**](https://www.well.ox.ac.uk/~gav/bgen_format/) or `.bgen` file.
-It can store hard calls and imputed data, unphased genotypes, and phased haplotypes. Each variant is compressed separately to make indexing simple. An index file (`.bgen.bgi`) may be provided to access each variant easily. [UK Biobank](https://www.ukbiobank.ac.uk/) uses this format for genome-wide imputed genotypes.
 
-A BGEN-formatted file consists of a header block containing general information, including an optional sample identifier block, followed by a series of variant blocks containing identification data of variants and genotype data representing probabilities for haplotypes or genotypes. Genotype data is often compressed using [zlib](http://www.zlib.net/) or [Zstandard](https://facebook.github.io/zstd/). 
+Used in:
 
-This package provides tools for iterating over the variants and parsing genotype data efficiently. It has been optimized for UK Biobank's zlib-compressed 8-bit genotype probabilities.
+* Wellcome Trust Case-Control Consortium 2
+* the MalariaGEN project
+* the ALSPAC study
+* [__UK Biobank__](https://enkre.net/cgi-bin/code/bgen/wiki/?name=BGEN+in+the+UK+Biobank): for genome-wide imputed genotypes and phased haplotypes
+
+
+
+### Features
+
+* Can store both hard-calls and imputed data
+* Can store both phased haplotypes and phased genotypes
+* Efficient variable-precision bit reapresntations
+* Per-variant compression $\rightarrow$ easy to index 
+    * Supported compression method: [zlib](http://www.zlib.net/) and [Zstandard](https://facebook.github.io/zstd/). 
+    * Index files are often provided as `.bgen.bgi` files, which are plain [SQLite3](http://www.sqlite.org) databases.
+
+Time to list variant identifying information (genomic location, ID and alleles): 18,496 samples, 121,668 SNPs
+(image source: https://www.well.ox.ac.uk/~gav/bgen_format/images/bgen_comparison.png)
+![](https://www.well.ox.ac.uk/~gav/bgen_format/images/bgen_comparison.png)
+
+_Plink 1 format (`.bed`/`.bim`/`.fam`) has the list of variants as a separate file (`.bim`), effectively zero time._
+
+### Structure
+
+A header block followed by a series of [variant data block - (compressed) genotype data block] pairs.
+* Header block 
+    * number of variants and samples
+    * compression method (none, zlib or zstandard)
+    * version of layout 
+        * Only "layout 2" is discussed below. "Layout 1" is also supported.
+    * sample identifiers (optional)
+
+
+* Variant data block
+    * variant id
+    * genomic position (chromosome, bp coordinate)
+    * list of alleles
+* Genotype data block (often compressed)
+    * ploidy of each sample (may vary sample-by-sample)
+    * if the genotype data are phased
+    * precision ($B$, number of bits to represent probabilities)
+    * probabilitiy data (e.g. an unsigned $B$-bit integer $x$ represents the probability of ($\frac{x}{2^{B}-1}$)
+
+_`BGEN.jl` provides tools for iterating over the variants and parsing genotype data efficiently. It has been optimized for UK Biobank's zlib-compressed, 8-bit byte-aligned, all-diploid, all-biallelic datafiles._
 
 ## Installation
 
@@ -92,7 +136,7 @@ There are three different datasets with different format versions, compressions,
 
 - `example.*.bgen`: imputed genotypes. 
 - `haplotypes.bgen`: phased haplotypes. 
-- `complex.*.bgen`: includes both imputed genotypes and phased haplotypes.
+- `complex.*.bgen`: includes both multiallelic imputed genotypes and multiallelic phased haplotypes.
 
 Some of the `.bgen` files are indexed with `.bgen.bgi` files:
 
@@ -893,6 +937,34 @@ variants = parse_variants(b; from_bgen_start=true)
 
 
 
+If the index file (`.bgi`) is provided, the users may search for certain RSID in a BGEN file. 
+
+
+```julia
+v = variant_by_rsid(b, "RSID_10")
+```
+
+
+
+
+    Variant(0x00000000000029de, 0x0000000000002a09, 0x0000000000002c43, 0x0000023a, 0x000001f4, "SNPID_10", "RSID_10", "01", 0x00002710, 0x0002, ["A", "G"], Genotypes[])
+
+
+
+Also, the users may look for the `n`-th (1-based) variant with respect to genomic location.
+
+
+```julia
+v = variant_by_index(b, 4)
+```
+
+
+
+
+    Variant(0x0000000000001a82, 0x0000000000001aab, 0x0000000000001ced, 0x00000242, 0x000001f4, "SNPID_3", "RSID_3", "01", 0x00000bb8, 0x0002, ["A", "G"], Genotypes[])
+
+
+
 ## Genotype/haplotype probabilities and minor allele dosage
 
 The genotype information is decompressed and parsed when probability data is needed. The parsing is triggered by a call to one of:
@@ -957,7 +1029,7 @@ missings(variants[1])
 
 
 
-On the other hand, if the data are phased, `probabilities!(b, v)[i, j]` represents the probability that haplotype `(i - 1) ÷ p + 1` has allele `(i - 1) % p + 1`. The below is an example of phased probabilities. In this case, ploidy is `[1, 2, 2, 2]`, thus index `[3:4, 1]` are invalid. 
+On the other hand, if the data are phased, `probabilities!(b, v)[i, j]` represents the probability that haplotype `(i - 1) ÷ n_alleles + 1` has allele `(i - 1) % n_alleles + 1` for sample `j`, where `n_alleles` is the number of alleles. The below is an example of phased probabilities. i.e., each column represents each sample, and each group of `n_alleles` rows represent the allele probabilities for each haplotype. In this case, ploidy is `[1, 2, 2, 2]`, thus indexes `[3:4, 1]` are invalid, and is filled with `NaN`.
 
 
 ```julia
@@ -975,6 +1047,18 @@ p = probabilities!(b2, vs[3])
      NaN    0.0  1.0  0.0
      NaN    1.0  0.0  1.0
 
+
+
+This variant has two possible alleles (allele 1: "A" and allele 2: "G"), and all the samples are diploids except for the first one, which is monoploid.
+
+It corresponds to a line of VCF file:
+
+```
+#CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  sample_0        sample_1        sample_2        sample_3
+01      3       V3      A       G       .       .       .       GT:HP   0:1,0   1|1:0,1,0,1     0|0:1,0,1,0     0|1:1,0,0,1
+```
+
+So the first sample is monoploid of A, the second sample is homozygote A|A, the third sample is homozygote G|G, and the last sample is heterozygote A|G (phased). 
 
 
 We can confirm the phasedness and ploidy of each sample as follows.
@@ -1004,6 +1088,20 @@ ploidy(vs[3])
      0x02
      0x02
      0x02
+
+
+
+
+```julia
+alleles(vs[3])
+```
+
+
+
+
+    2-element Array{String,1}:
+     "A"
+     "G"
 
 
 
@@ -1133,4 +1231,473 @@ minor_allele_dosage!(b, variants[1]; T=Float64, mean_impute=true)
      1.8941176470588235
      0.9921568627450981
 
+
+
+
+```julia
+b = Bgen(BGEN.datadir("example.8bits.bgen"); 
+    sample_path=BGEN.datadir("example.sample"), 
+    idx_path=BGEN.datadir("example.8bits.bgen.bgi"))
+```
+
+
+
+
+    Bgen(IOStream(<file /home/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen>), 0x000000000001f6ea, BGEN.Header(0x0000178c, 0x00000014, 0x000000c7, 0x000001f4, 0x01, 0x02, true), ["sample_001", "sample_002", "sample_003", "sample_004", "sample_005", "sample_006", "sample_007", "sample_008", "sample_009", "sample_010"  …  "sample_491", "sample_492", "sample_493", "sample_494", "sample_495", "sample_496", "sample_497", "sample_498", "sample_499", "sample_500"], Index("/home/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi", SQLite.DB("/home/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi"), UInt32[], String[], String[], UInt32[]))
+
+
+
+
+```julia
+for (i, v) in enumerate(iterator(b))
+    println("$i $(v.rsid)")
+end
+    
+```
+
+    1 RSID_101
+    2 RSID_2
+    3 RSID_102
+    4 RSID_3
+    5 RSID_103
+    6 RSID_4
+    7 RSID_104
+    8 RSID_5
+    9 RSID_105
+    10 RSID_6
+    11 RSID_106
+    12 RSID_7
+    13 RSID_107
+    14 RSID_8
+    15 RSID_108
+    16 RSID_9
+    17 RSID_109
+    18 RSID_10
+    19 RSID_100
+    20 RSID_110
+    21 RSID_11
+    22 RSID_111
+    23 RSID_12
+    24 RSID_112
+    25 RSID_13
+    26 RSID_113
+    27 RSID_14
+    28 RSID_114
+    29 RSID_15
+    30 RSID_115
+    31 RSID_16
+    32 RSID_116
+    33 RSID_17
+    34 RSID_117
+    35 RSID_18
+    36 RSID_118
+    37 RSID_19
+    38 RSID_119
+    39 RSID_20
+    40 RSID_120
+    41 RSID_21
+    42 RSID_121
+    43 RSID_22
+    44 RSID_122
+    45 RSID_23
+    46 RSID_123
+    47 RSID_24
+    48 RSID_124
+    49 RSID_25
+    50 RSID_125
+    51 RSID_26
+    52 RSID_126
+    53 RSID_27
+    54 RSID_127
+    55 RSID_28
+    56 RSID_128
+    57 RSID_29
+    58 RSID_129
+    59 RSID_30
+    60 RSID_130
+    61 RSID_31
+    62 RSID_131
+    63 RSID_32
+    64 RSID_132
+    65 RSID_33
+    66 RSID_133
+    67 RSID_34
+    68 RSID_134
+    69 RSID_35
+    70 RSID_135
+    71 RSID_36
+    72 RSID_136
+    73 RSID_37
+    74 RSID_137
+    75 RSID_38
+    76 RSID_138
+    77 RSID_39
+    78 RSID_139
+    79 RSID_40
+    80 RSID_140
+    81 RSID_41
+    82 RSID_141
+    83 RSID_42
+    84 RSID_142
+    85 RSID_43
+    86 RSID_143
+    87 RSID_44
+    88 RSID_144
+    89 RSID_45
+    90 RSID_145
+    91 RSID_46
+    92 RSID_146
+    93 RSID_47
+    94 RSID_147
+    95 RSID_48
+    96 RSID_148
+    97 RSID_49
+    98 RSID_149
+    99 RSID_50
+    100 RSID_150
+    101 RSID_51
+    102 RSID_151
+    103 RSID_52
+    104 RSID_152
+    105 RSID_53
+    106 RSID_153
+    107 RSID_54
+    108 RSID_154
+    109 RSID_55
+    110 RSID_155
+    111 RSID_56
+    112 RSID_156
+    113 RSID_57
+    114 RSID_157
+    115 RSID_58
+    116 RSID_158
+    117 RSID_59
+    118 RSID_159
+    119 RSID_60
+    120 RSID_160
+    121 RSID_61
+    122 RSID_161
+    123 RSID_62
+    124 RSID_162
+    125 RSID_63
+    126 RSID_163
+    127 RSID_64
+    128 RSID_164
+    129 RSID_65
+    130 RSID_165
+    131 RSID_66
+    132 RSID_166
+    133 RSID_67
+    134 RSID_167
+    135 RSID_68
+    136 RSID_168
+    137 RSID_69
+    138 RSID_169
+    139 RSID_70
+    140 RSID_170
+    141 RSID_71
+    142 RSID_171
+    143 RSID_72
+    144 RSID_172
+    145 RSID_73
+    146 RSID_173
+    147 RSID_74
+    148 RSID_174
+    149 RSID_75
+    150 RSID_175
+    151 RSID_76
+    152 RSID_176
+    153 RSID_77
+    154 RSID_177
+    155 RSID_78
+    156 RSID_178
+    157 RSID_79
+    158 RSID_179
+    159 RSID_80
+    160 RSID_180
+    161 RSID_81
+    162 RSID_181
+    163 RSID_82
+    164 RSID_182
+    165 RSID_83
+    166 RSID_183
+    167 RSID_84
+    168 RSID_184
+    169 RSID_85
+    170 RSID_185
+    171 RSID_86
+    172 RSID_186
+    173 RSID_87
+    174 RSID_187
+    175 RSID_88
+    176 RSID_188
+    177 RSID_89
+    178 RSID_189
+    179 RSID_90
+    180 RSID_190
+    181 RSID_91
+    182 RSID_191
+    183 RSID_92
+    184 RSID_192
+    185 RSID_93
+    186 RSID_193
+    187 RSID_94
+    188 RSID_194
+    189 RSID_95
+    190 RSID_195
+    191 RSID_96
+    192 RSID_196
+    193 RSID_97
+    194 RSID_197
+    195 RSID_98
+    196 RSID_198
+    197 RSID_99
+    198 RSID_199
+    199 RSID_200
+
+
+
+```julia
+bv = BitVector(undef, 500)
+```
+
+
+
+
+    500-element BitArray{1}:
+     0
+     0
+     0
+     0
+     0
+     0
+     0
+     0
+     0
+     0
+     0
+     0
+     0
+     ⋮
+     0
+     0
+     0
+     0
+     0
+     0
+     0
+     0
+     0
+     0
+     0
+     0
+
+
+
+
+```julia
+for (i, v) in zip(eachindex(bv), iterator(b))
+    println("$i $(v.rsid)")
+end
+```
+
+    1 RSID_101
+    2 RSID_2
+    3 RSID_102
+    4 RSID_3
+    5 RSID_103
+    6 RSID_4
+    7 RSID_104
+    8 RSID_5
+    9 RSID_105
+    10 RSID_6
+    11 RSID_106
+    12 RSID_7
+    13 RSID_107
+    14 RSID_8
+    15 RSID_108
+    16 RSID_9
+    17 RSID_109
+    18 RSID_10
+    19 RSID_100
+    20 RSID_110
+    21 RSID_11
+    22 RSID_111
+    23 RSID_12
+    24 RSID_112
+    25 RSID_13
+    26 RSID_113
+    27 RSID_14
+    28 RSID_114
+    29 RSID_15
+    30 RSID_115
+    31 RSID_16
+    32 RSID_116
+    33 RSID_17
+    34 RSID_117
+    35 RSID_18
+    36 RSID_118
+    37 RSID_19
+    38 RSID_119
+    39 RSID_20
+    40 RSID_120
+    41 RSID_21
+    42 RSID_121
+    43 RSID_22
+    44 RSID_122
+    45 RSID_23
+    46 RSID_123
+    47 RSID_24
+    48 RSID_124
+    49 RSID_25
+    50 RSID_125
+    51 RSID_26
+    52 RSID_126
+    53 RSID_27
+    54 RSID_127
+    55 RSID_28
+    56 RSID_128
+    57 RSID_29
+    58 RSID_129
+    59 RSID_30
+    60 RSID_130
+    61 RSID_31
+    62 RSID_131
+    63 RSID_32
+    64 RSID_132
+    65 RSID_33
+    66 RSID_133
+    67 RSID_34
+    68 RSID_134
+    69 RSID_35
+    70 RSID_135
+    71 RSID_36
+    72 RSID_136
+    73 RSID_37
+    74 RSID_137
+    75 RSID_38
+    76 RSID_138
+    77 RSID_39
+    78 RSID_139
+    79 RSID_40
+    80 RSID_140
+    81 RSID_41
+    82 RSID_141
+    83 RSID_42
+    84 RSID_142
+    85 RSID_43
+    86 RSID_143
+    87 RSID_44
+    88 RSID_144
+    89 RSID_45
+    90 RSID_145
+    91 RSID_46
+    92 RSID_146
+    93 RSID_47
+    94 RSID_147
+    95 RSID_48
+    96 RSID_148
+    97 RSID_49
+    98 RSID_149
+    99 RSID_50
+    100 RSID_150
+    101 RSID_51
+    102 RSID_151
+    103 RSID_52
+    104 RSID_152
+    105 RSID_53
+    106 RSID_153
+    107 RSID_54
+    108 RSID_154
+    109 RSID_55
+    110 RSID_155
+    111 RSID_56
+    112 RSID_156
+    113 RSID_57
+    114 RSID_157
+    115 RSID_58
+    116 RSID_158
+    117 RSID_59
+    118 RSID_159
+    119 RSID_60
+    120 RSID_160
+    121 RSID_61
+    122 RSID_161
+    123 RSID_62
+    124 RSID_162
+    125 RSID_63
+    126 RSID_163
+    127 RSID_64
+    128 RSID_164
+    129 RSID_65
+    130 RSID_165
+    131 RSID_66
+    132 RSID_166
+    133 RSID_67
+    134 RSID_167
+    135 RSID_68
+    136 RSID_168
+    137 RSID_69
+    138 RSID_169
+    139 RSID_70
+    140 RSID_170
+    141 RSID_71
+    142 RSID_171
+    143 RSID_72
+    144 RSID_172
+    145 RSID_73
+    146 RSID_173
+    147 RSID_74
+    148 RSID_174
+    149 RSID_75
+    150 RSID_175
+    151 RSID_76
+    152 RSID_176
+    153 RSID_77
+    154 RSID_177
+    155 RSID_78
+    156 RSID_178
+    157 RSID_79
+    158 RSID_179
+    159 RSID_80
+    160 RSID_180
+    161 RSID_81
+    162 RSID_181
+    163 RSID_82
+    164 RSID_182
+    165 RSID_83
+    166 RSID_183
+    167 RSID_84
+    168 RSID_184
+    169 RSID_85
+    170 RSID_185
+    171 RSID_86
+    172 RSID_186
+    173 RSID_87
+    174 RSID_187
+    175 RSID_88
+    176 RSID_188
+    177 RSID_89
+    178 RSID_189
+    179 RSID_90
+    180 RSID_190
+    181 RSID_91
+    182 RSID_191
+    183 RSID_92
+    184 RSID_192
+    185 RSID_93
+    186 RSID_193
+    187 RSID_94
+    188 RSID_194
+    189 RSID_95
+    190 RSID_195
+    191 RSID_96
+    192 RSID_196
+    193 RSID_97
+    194 RSID_197
+    195 RSID_98
+    196 RSID_198
+    197 RSID_99
+    198 RSID_199
+    199 RSID_200
 

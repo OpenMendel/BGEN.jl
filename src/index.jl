@@ -71,12 +71,29 @@ function variant_by_pos(idx::Index, pos::Integer)
 end
 
 """
-    variant_by_pos(idx, pos)
+    variant_by_pos(bgen, pos)
 Get the variant of bgen variant given `pos` in the index file
 """
 function variant_by_pos(b::Bgen, pos::Integer)
     _check_idx(b)
     offset = variant_by_pos(b.idx, pos)
+    return Variant(b, offset)
+end
+
+function variant_by_index(idx::Index, index::Integer)
+    q = "SELECT file_start_position FROM Variant LIMIT 1 OFFSET ?"
+    params = (index - 1,)
+    r = (DBInterface.execute(idx.db, q, params) |> columntable)[1]
+    return r[1]
+end
+
+"""
+    variant_by_index(bgen, n)
+get the `n`-th variant (1-based).
+"""
+function variant_by_index(b::Bgen, index::Integer)
+    _check_idx(b)
+    offset = variant_by_index(b.idx, index)
     return Variant(b, offset)
 end
 

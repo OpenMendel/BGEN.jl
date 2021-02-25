@@ -22,6 +22,8 @@ end
     in_region_offsets = select_region(b, chrom; start=start, stop=stop)
     @test length(in_region_offsets) == length(filter(x -> start <= x.pos <=
         stop, gen_data))
+    @test rsid(variant_by_rsid(b, "RSID_10")) == "RSID_10"
+    @test rsid(variant_by_index(b, 4)) == "RSID_3"
 end
 
 end
