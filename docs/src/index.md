@@ -86,13 +86,9 @@ versioninfo()
 using BGEN, Glob
 ```
 
-    ┌ Info: Precompiling BGEN [6db4b851-9beb-4b83-9d64-eb1cfb37721d]
-    └ @ Base loading.jl:1278
-
-
 ## Example Data
 
-The example datafiles are stored in `/data` directory of this repository. It can be accessed through the function `BGEN.datadir()`. 
+The example datafiles are stored in `/data` directory of this repository. It can be accessed through the function `BGEN.datadir()`. These files come from [the reference implementation](https://enkre.net/cgi-bin/code/bgen/dir?ci=trunk) for the BGEN format.
 
 
 ```julia
@@ -136,7 +132,7 @@ There are three different datasets with different format versions, compressions,
 
 - `example.*.bgen`: imputed genotypes. 
 - `haplotypes.bgen`: phased haplotypes. 
-- `complex.*.bgen`: includes both multiallelic imputed genotypes and multiallelic phased haplotypes.
+- `complex.*.bgen`: includes imputed genotypes and phased haplotypes, and multiallelic genotypes.
 
 Some of the `.bgen` files are indexed with `.bgen.bgi` files:
 
