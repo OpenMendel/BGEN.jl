@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>BGEN.jl · BGEN.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">BGEN.jl</span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>BGEN.jl</a><ul class="internal"><li><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li><a class="tocitem" href="#Example-Data"><span>Example Data</span></a></li><li><a class="tocitem" href="#Type-Bgen"><span>Type <code>Bgen</code></span></a></li><li><a class="tocitem" href="#Variant-and-VariantIterator"><span><code>Variant</code> and <code>VariantIterator</code></span></a></li><li><a class="tocitem" href="#Genotype/haplotype-probabilities-and-minor-allele-dosage"><span>Genotype/haplotype probabilities and minor allele dosage</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>BGEN.jl</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>BGEN.jl</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/OpenMendel/BGEN.jl/blob/master/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="BGEN.jl"><a class="docs-heading-anchor" href="#BGEN.jl">BGEN.jl</a><a id="BGEN.jl-1"></a><a class="docs-heading-anchor-permalink" href="#BGEN.jl" title="Permalink"></a></h1><p>Routines for reading compressed storage of genotyped or imputed markers</p><p><a href="https://en.wikipedia.org/wiki/Genome-wide_association_study"><em>Genome-wide association studies (GWAS)</em></a> data with imputed markers are often saved in the <a href="https://www.well.ox.ac.uk/~gav/bgen_format/"><strong>BGEN format</strong></a> or <code>.bgen</code> file. It can store hard calls and imputed data, unphased genotypes, and phased haplotypes. Each variant is compressed separately to make indexing simple. An index file (<code>.bgen.bgi</code>) may be provided to access each variant easily. <a href="https://www.ukbiobank.ac.uk/">UK Biobank</a> uses this format for genome-wide imputed genotypes.</p><p>A BGEN-formatted file consists of a header block containing general information, including an optional sample identifier block, followed by a series of variant blocks containing identification data of variants and genotype data representing probabilities for haplotypes or genotypes. Genotype data is often compressed using <a href="http://www.zlib.net/">zlib</a> or <a href="https://facebook.github.io/zstd/">Zstandard</a>. </p><p>This package provides tools for iterating over the variants and parsing genotype data efficiently. It has been optimized for UK Biobank&#39;s zlib-compressed 8-bit genotype probabilities.</p><h2 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h2><p>This package requires Julia v1.0 or later, which can be obtained from https://julialang.org/downloads/ or by building Julia from the sources in the https://github.com/JuliaLang/julia repository.</p><p>The package has not yet been registered and must be installed using the repository location.  It can be done with the following Julia code:</p><pre><code class="language-julia">using Pkg
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>BGEN.jl · BGEN.jl</title><link href="https://fonts.googleapis.com/css?family=Lato|Roboto+Mono" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.0/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.11.1/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit">BGEN.jl</span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>BGEN.jl</a><ul class="internal"><li><a class="tocitem" href="#The-BGEN-Format"><span>The BGEN Format</span></a></li><li><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li><a class="tocitem" href="#Example-Data"><span>Example Data</span></a></li><li><a class="tocitem" href="#Type-Bgen"><span>Type <code>Bgen</code></span></a></li><li><a class="tocitem" href="#Variant-and-VariantIterator"><span><code>Variant</code> and <code>VariantIterator</code></span></a></li><li><a class="tocitem" href="#Genotype/haplotype-probabilities-and-minor-allele-dosage"><span>Genotype/haplotype probabilities and minor allele dosage</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>BGEN.jl</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>BGEN.jl</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/OpenMendel/BGEN.jl/blob/master/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab"></span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="BGEN.jl"><a class="docs-heading-anchor" href="#BGEN.jl">BGEN.jl</a><a id="BGEN.jl-1"></a><a class="docs-heading-anchor-permalink" href="#BGEN.jl" title="Permalink"></a></h1><p>Routines for reading compressed storage of genotyped or imputed markers</p><h2 id="The-BGEN-Format"><a class="docs-heading-anchor" href="#The-BGEN-Format">The BGEN Format</a><a id="The-BGEN-Format-1"></a><a class="docs-heading-anchor-permalink" href="#The-BGEN-Format" title="Permalink"></a></h2><p><a href="https://en.wikipedia.org/wiki/Genome-wide_association_study"><em>Genome-wide association studies (GWAS)</em></a> data with imputed markers are often saved in the <a href="https://www.well.ox.ac.uk/~gav/bgen_format/"><strong>BGEN format</strong></a> or <code>.bgen</code> file.</p><p>Used in:</p><ul><li>Wellcome Trust Case-Control Consortium 2</li><li>the MalariaGEN project</li><li>the ALSPAC study</li><li><a href="https://enkre.net/cgi-bin/code/bgen/wiki/?name=BGEN+in+the+UK+Biobank"><strong>UK Biobank</strong></a>: for genome-wide imputed genotypes and phased haplotypes</li></ul><h3 id="Features"><a class="docs-heading-anchor" href="#Features">Features</a><a id="Features-1"></a><a class="docs-heading-anchor-permalink" href="#Features" title="Permalink"></a></h3><ul><li>Can store both hard-calls and imputed data</li><li>Can store both phased haplotypes and phased genotypes</li><li>Efficient variable-precision bit reapresntations</li><li>Per-variant compression <span>$\rightarrow$</span> easy to index <ul><li>Supported compression method: <a href="http://www.zlib.net/">zlib</a> and <a href="https://facebook.github.io/zstd/">Zstandard</a>. </li><li>Index files are often provided as <code>.bgen.bgi</code> files, which are plain <a href="http://www.sqlite.org">SQLite3</a> databases.</li></ul></li></ul><p>Time to list variant identifying information (genomic location, ID and alleles): 18,496 samples, 121,668 SNPs (image source: https://www.well.ox.ac.uk/~gav/bgen<em>format/images/bgen</em>comparison.png) <img src="https://www.well.ox.ac.uk/~gav/bgen_format/images/bgen_comparison.png" alt/></p><p><em>Plink 1 format (<code>.bed</code>/<code>.bim</code>/<code>.fam</code>) has the list of variants as a separate file (<code>.bim</code>), effectively zero time.</em></p><h3 id="Structure"><a class="docs-heading-anchor" href="#Structure">Structure</a><a id="Structure-1"></a><a class="docs-heading-anchor-permalink" href="#Structure" title="Permalink"></a></h3><p>A header block followed by a series of [variant data block - (compressed) genotype data block] pairs.</p><ul><li>Header block <ul><li>number of variants and samples</li><li>compression method (none, zlib or zstandard)</li><li>version of layout <ul><li>Only &quot;layout 2&quot; is discussed below. &quot;Layout 1&quot; is also supported.</li></ul></li><li>sample identifiers (optional)</li></ul></li></ul><ul><li>Variant data block<ul><li>variant id</li><li>genomic position (chromosome, bp coordinate)</li><li>list of alleles</li></ul></li><li>Genotype data block (often compressed)<ul><li>ploidy of each sample (may vary sample-by-sample)</li><li>if the genotype data are phased</li><li>precision (<span>$B$</span>, number of bits to represent probabilities)</li><li>probabilitiy data (e.g. an unsigned <span>$B$</span>-bit integer <span>$x$</span> represents the probability of (<span>$\frac{x}{2^{B}-1}$</span>)</li></ul></li></ul><p><em><code>BGEN.jl</code> provides tools for iterating over the variants and parsing genotype data efficiently. It has been optimized for UK Biobank&#39;s zlib-compressed, 8-bit byte-aligned, all-diploid, all-biallelic datafiles.</em></p><h2 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h2><p>This package requires Julia v1.0 or later, which can be obtained from https://julialang.org/downloads/ or by building Julia from the sources in the https://github.com/JuliaLang/julia repository.</p><p>The package has not yet been registered and must be installed using the repository location.  It can be done with the following Julia code:</p><pre><code class="language-julia">using Pkg
 pkg&quot;add https://github.com/OpenMendel/BGEN.jl&quot;</code></pre><pre><code class="language-julia">versioninfo()</code></pre><pre><code class="language-none">Julia Version 1.5.2
 Commit 539f3ce943 (2020-09-23 23:17 UTC)
 Platform Info:
@@ -34,7 +34,7 @@ Platform Info:
  &quot;/home/kose/.julia/dev/BGEN/src/../data/examples.16bits.bgen&quot;
  &quot;/home/kose/.julia/dev/BGEN/src/../data/haplotypes.bgen&quot;
  &quot;/home/kose/.julia/dev/BGEN/src/../data/haplotypes.bgen.bgi&quot;
- &quot;/home/kose/.julia/dev/BGEN/src/../data/haplotypes.haps&quot;</code></pre><p>There are three different datasets with different format versions, compressions, or number of bits to represent probability values. </p><ul><li><code>example.*.bgen</code>: imputed genotypes. </li><li><code>haplotypes.bgen</code>: phased haplotypes. </li><li><code>complex.*.bgen</code>: includes both imputed genotypes and phased haplotypes.</li></ul><p>Some of the <code>.bgen</code> files are indexed with <code>.bgen.bgi</code> files:</p><pre><code class="language-julia">Glob.glob(&quot;*.bgen.bgi&quot;, BGEN.datadir())</code></pre><pre><code class="language-none">4-element Array{String,1}:
+ &quot;/home/kose/.julia/dev/BGEN/src/../data/haplotypes.haps&quot;</code></pre><p>There are three different datasets with different format versions, compressions, or number of bits to represent probability values. </p><ul><li><code>example.*.bgen</code>: imputed genotypes. </li><li><code>haplotypes.bgen</code>: phased haplotypes. </li><li><code>complex.*.bgen</code>: includes both multiallelic imputed genotypes and multiallelic phased haplotypes.</li></ul><p>Some of the <code>.bgen</code> files are indexed with <code>.bgen.bgi</code> files:</p><pre><code class="language-julia">Glob.glob(&quot;*.bgen.bgi&quot;, BGEN.datadir())</code></pre><pre><code class="language-none">4-element Array{String,1}:
  &quot;/home/kose/.julia/dev/BGEN/src/../data/complex.bgen.bgi&quot;
  &quot;/home/kose/.julia/dev/BGEN/src/../data/example.16bits.bgen.bgi&quot;
  &quot;/home/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi&quot;
@@ -572,21 +572,24 @@ RSID_200</code></pre><p>With the presence of <code>.bgen.bgi</code> index file, 
  Variant(0x000000000001ec86, 0x000000000001ecb3, 0x000000000001ef8b, 0x000002d8, 0x000001f4, &quot;SNPID_197&quot;, &quot;RSID_197&quot;, &quot;01&quot;, 0x00017ae9, 0x0002, [&quot;A&quot;, &quot;G&quot;], Genotypes[])
  Variant(0x000000000001ef8b, 0x000000000001efb8, 0x000000000001f183, 0x000001cb, 0x000001f4, &quot;SNPID_198&quot;, &quot;RSID_198&quot;, &quot;01&quot;, 0x00017ed1, 0x0002, [&quot;A&quot;, &quot;G&quot;], Genotypes[])
  Variant(0x000000000001f183, 0x000000000001f1b0, 0x000000000001f3d4, 0x00000224, 0x000001f4, &quot;SNPID_199&quot;, &quot;RSID_199&quot;, &quot;01&quot;, 0x000182b9, 0x0002, [&quot;A&quot;, &quot;G&quot;], Genotypes[])
- Variant(0x000000000001f3d4, 0x000000000001f401, 0x000000000001f6ea, 0x000002e9, 0x000001f4, &quot;SNPID_200&quot;, &quot;RSID_200&quot;, &quot;01&quot;, 0x000186a1, 0x0002, [&quot;A&quot;, &quot;G&quot;], Genotypes[])</code></pre><h2 id="Genotype/haplotype-probabilities-and-minor-allele-dosage"><a class="docs-heading-anchor" href="#Genotype/haplotype-probabilities-and-minor-allele-dosage">Genotype/haplotype probabilities and minor allele dosage</a><a id="Genotype/haplotype-probabilities-and-minor-allele-dosage-1"></a><a class="docs-heading-anchor-permalink" href="#Genotype/haplotype-probabilities-and-minor-allele-dosage" title="Permalink"></a></h2><p>The genotype information is decompressed and parsed when probability data is needed. The parsing is triggered by a call to one of:</p><ul><li><code>probabilities!(b::Bgen, v::Variant; T=Float64)</code> : probability of each genotype/haplotype.</li><li><code>minor_allele_dosage!(b::Bgen, v::Variant; T=Float64)</code> : minor allele dosage for a biallelic variant.</li></ul><p>Once parsed, the results are cached and loaded on any subsequent calls.  After that, one may access genotype information using the following functions, as well as <code>probabilities!()</code> and <code>minor_allele_dosage!()</code>:</p><ul><li><code>phased(v::Variant)</code>: if the stored data is phased</li><li><code>min_ploidy(v::Variant)</code>: minimum ploidy across the samples</li><li><code>max_ploidy(v::Variant)</code>: maximum ploidy across the samples</li><li><code>ploidy(v::Variant)</code> : Vector of ploidy for each sample</li><li><code>bit_depth(v::Variant)</code> : number of bits used to represent a probability value</li><li><code>missings(v::Variant)</code> : list of samples data is missing</li></ul><p>These functions are allowed after calling <code>minor_allele_dosage!()</code>:</p><ul><li><code>minor_allele(v::Variant)</code></li><li><code>major_allele(v::Variant)</code></li></ul><p>If the data are not phased, <code>probabilities!(b, v)[i, j]</code> represents the probability of genotype <code>i</code> for sample <code>j</code>. Each column sums up to one. The genotypes are in <a href="https://en.wikipedia.org/wiki/Lexicographic_order#Colexicographic_order">colex-order</a> of allele counts. For example, for three alleles with ploidy 3:</p><table><tr><th style="text-align: right">row index</th><th style="text-align: center">allele counts</th><th style="text-align: center">genotype</th></tr><tr><td style="text-align: right">1</td><td style="text-align: center">(3, 0, 0)</td><td style="text-align: center">111</td></tr><tr><td style="text-align: right">2</td><td style="text-align: center">(2, 1, 0)</td><td style="text-align: center">112</td></tr><tr><td style="text-align: right">3</td><td style="text-align: center">(1, 2, 0)</td><td style="text-align: center">122</td></tr><tr><td style="text-align: right">4</td><td style="text-align: center">(0, 3, 0)</td><td style="text-align: center">222</td></tr><tr><td style="text-align: right">5</td><td style="text-align: center">(2, 0, 1)</td><td style="text-align: center">113</td></tr><tr><td style="text-align: right">6</td><td style="text-align: center">(1, 1, 1)</td><td style="text-align: center">123</td></tr><tr><td style="text-align: right">7</td><td style="text-align: center">(0, 2, 1)</td><td style="text-align: center">223</td></tr><tr><td style="text-align: right">8</td><td style="text-align: center">(1, 0, 2)</td><td style="text-align: center">133</td></tr><tr><td style="text-align: right">9</td><td style="text-align: center">(0, 1, 2)</td><td style="text-align: center">233</td></tr><tr><td style="text-align: right">10</td><td style="text-align: center">(0, 0, 3)</td><td style="text-align: center">333</td></tr></table><pre><code class="language-julia">probabilities!(b, variants[1])</code></pre><pre><code class="language-none">3×500 Array{Float64,2}:
+ Variant(0x000000000001f3d4, 0x000000000001f401, 0x000000000001f6ea, 0x000002e9, 0x000001f4, &quot;SNPID_200&quot;, &quot;RSID_200&quot;, &quot;01&quot;, 0x000186a1, 0x0002, [&quot;A&quot;, &quot;G&quot;], Genotypes[])</code></pre><p>If the index file (<code>.bgi</code>) is provided, the users may search for certain RSID in a BGEN file. </p><pre><code class="language-julia">v = variant_by_rsid(b, &quot;RSID_10&quot;)</code></pre><pre><code class="language-none">Variant(0x00000000000029de, 0x0000000000002a09, 0x0000000000002c43, 0x0000023a, 0x000001f4, &quot;SNPID_10&quot;, &quot;RSID_10&quot;, &quot;01&quot;, 0x00002710, 0x0002, [&quot;A&quot;, &quot;G&quot;], Genotypes[])</code></pre><p>Also, the users may look for the <code>n</code>-th (1-based) variant with respect to genomic location.</p><pre><code class="language-julia">v = variant_by_index(b, 4)</code></pre><pre><code class="language-none">Variant(0x0000000000001a82, 0x0000000000001aab, 0x0000000000001ced, 0x00000242, 0x000001f4, &quot;SNPID_3&quot;, &quot;RSID_3&quot;, &quot;01&quot;, 0x00000bb8, 0x0002, [&quot;A&quot;, &quot;G&quot;], Genotypes[])</code></pre><h2 id="Genotype/haplotype-probabilities-and-minor-allele-dosage"><a class="docs-heading-anchor" href="#Genotype/haplotype-probabilities-and-minor-allele-dosage">Genotype/haplotype probabilities and minor allele dosage</a><a id="Genotype/haplotype-probabilities-and-minor-allele-dosage-1"></a><a class="docs-heading-anchor-permalink" href="#Genotype/haplotype-probabilities-and-minor-allele-dosage" title="Permalink"></a></h2><p>The genotype information is decompressed and parsed when probability data is needed. The parsing is triggered by a call to one of:</p><ul><li><code>probabilities!(b::Bgen, v::Variant; T=Float64)</code> : probability of each genotype/haplotype.</li><li><code>minor_allele_dosage!(b::Bgen, v::Variant; T=Float64)</code> : minor allele dosage for a biallelic variant.</li></ul><p>Once parsed, the results are cached and loaded on any subsequent calls.  After that, one may access genotype information using the following functions, as well as <code>probabilities!()</code> and <code>minor_allele_dosage!()</code>:</p><ul><li><code>phased(v::Variant)</code>: if the stored data is phased</li><li><code>min_ploidy(v::Variant)</code>: minimum ploidy across the samples</li><li><code>max_ploidy(v::Variant)</code>: maximum ploidy across the samples</li><li><code>ploidy(v::Variant)</code> : Vector of ploidy for each sample</li><li><code>bit_depth(v::Variant)</code> : number of bits used to represent a probability value</li><li><code>missings(v::Variant)</code> : list of samples data is missing</li></ul><p>These functions are allowed after calling <code>minor_allele_dosage!()</code>:</p><ul><li><code>minor_allele(v::Variant)</code></li><li><code>major_allele(v::Variant)</code></li></ul><p>If the data are not phased, <code>probabilities!(b, v)[i, j]</code> represents the probability of genotype <code>i</code> for sample <code>j</code>. Each column sums up to one. The genotypes are in <a href="https://en.wikipedia.org/wiki/Lexicographic_order#Colexicographic_order">colex-order</a> of allele counts. For example, for three alleles with ploidy 3:</p><table><tr><th style="text-align: right">row index</th><th style="text-align: center">allele counts</th><th style="text-align: center">genotype</th></tr><tr><td style="text-align: right">1</td><td style="text-align: center">(3, 0, 0)</td><td style="text-align: center">111</td></tr><tr><td style="text-align: right">2</td><td style="text-align: center">(2, 1, 0)</td><td style="text-align: center">112</td></tr><tr><td style="text-align: right">3</td><td style="text-align: center">(1, 2, 0)</td><td style="text-align: center">122</td></tr><tr><td style="text-align: right">4</td><td style="text-align: center">(0, 3, 0)</td><td style="text-align: center">222</td></tr><tr><td style="text-align: right">5</td><td style="text-align: center">(2, 0, 1)</td><td style="text-align: center">113</td></tr><tr><td style="text-align: right">6</td><td style="text-align: center">(1, 1, 1)</td><td style="text-align: center">123</td></tr><tr><td style="text-align: right">7</td><td style="text-align: center">(0, 2, 1)</td><td style="text-align: center">223</td></tr><tr><td style="text-align: right">8</td><td style="text-align: center">(1, 0, 2)</td><td style="text-align: center">133</td></tr><tr><td style="text-align: right">9</td><td style="text-align: center">(0, 1, 2)</td><td style="text-align: center">233</td></tr><tr><td style="text-align: right">10</td><td style="text-align: center">(0, 0, 3)</td><td style="text-align: center">333</td></tr></table><pre><code class="language-julia">probabilities!(b, variants[1])</code></pre><pre><code class="language-none">3×500 Array{Float64,2}:
  NaN  0.027451    0.0156863  0.0235294  …  0.0156863  0.921569   0.00392157
  NaN  0.00784314  0.0509804  0.933333      0.027451   0.0509804  0.984314
  NaN  0.964706    0.933333   0.0431373     0.956863   0.027451   0.0117647</code></pre><p>Genotype data for sample 1 is missing in this case. </p><pre><code class="language-julia">missings(variants[1])</code></pre><pre><code class="language-none">1-element Array{Int64,1}:
- 1</code></pre><p>On the other hand, if the data are phased, <code>probabilities!(b, v)[i, j]</code> represents the probability that haplotype <code>(i - 1) ÷ p + 1</code> has allele <code>(i - 1) % p + 1</code>. The below is an example of phased probabilities. In this case, ploidy is <code>[1, 2, 2, 2]</code>, thus index <code>[3:4, 1]</code> are invalid. </p><pre><code class="language-julia">b2 = Bgen(BGEN.datadir(&quot;complex.bgen&quot;))
+ 1</code></pre><p>On the other hand, if the data are phased, <code>probabilities!(b, v)[i, j]</code> represents the probability that haplotype <code>(i - 1) ÷ n_alleles + 1</code> has allele <code>(i - 1) % n_alleles + 1</code> for sample <code>j</code>, where <code>n_alleles</code> is the number of alleles. The below is an example of phased probabilities. i.e., each column represents each sample, and each group of <code>n_alleles</code> rows represent the allele probabilities for each haplotype. In this case, ploidy is <code>[1, 2, 2, 2]</code>, thus indexes <code>[3:4, 1]</code> are invalid, and is filled with <code>NaN</code>.</p><pre><code class="language-julia">b2 = Bgen(BGEN.datadir(&quot;complex.bgen&quot;))
 vs = parse_variants(b2)
 p = probabilities!(b2, vs[3])</code></pre><pre><code class="language-none">4×4 Array{Float64,2}:
    1.0  0.0  1.0  1.0
    0.0  1.0  0.0  0.0
  NaN    0.0  1.0  0.0
- NaN    1.0  0.0  1.0</code></pre><p>We can confirm the phasedness and ploidy of each sample as follows.</p><pre><code class="language-julia">phased(vs[3])</code></pre><pre><code class="language-none">0x01</code></pre><pre><code class="language-julia">ploidy(vs[3])</code></pre><pre><code class="language-none">4-element Array{UInt8,1}:
+ NaN    1.0  0.0  1.0</code></pre><p>This variant has two possible alleles (allele 1: &quot;A&quot; and allele 2: &quot;G&quot;), and all the samples are diploids except for the first one, which is monoploid.</p><p>It corresponds to a line of VCF file:</p><pre><code class="language-none">#CHROM  POS     ID      REF     ALT     QUAL    FILTER  INFO    FORMAT  sample_0        sample_1        sample_2        sample_3
+01      3       V3      A       G       .       .       .       GT:HP   0:1,0   1|1:0,1,0,1     0|0:1,0,1,0     0|1:1,0,0,1</code></pre><p>So the first sample is monoploid of A, the second sample is homozygote A|A, the third sample is homozygote G|G, and the last sample is heterozygote A|G (phased). </p><p>We can confirm the phasedness and ploidy of each sample as follows.</p><pre><code class="language-julia">phased(vs[3])</code></pre><pre><code class="language-none">0x01</code></pre><pre><code class="language-julia">ploidy(vs[3])</code></pre><pre><code class="language-none">4-element Array{UInt8,1}:
  0x01
  0x02
  0x02
- 0x02</code></pre><p>For biallelic nonphased genotype data, <code>minor_allele_dosage!(b, v)</code> can be computed. </p><pre><code class="language-julia">minor_allele_dosage!(b, variants[1])</code></pre><pre><code class="language-none">500-element Array{Float64,1}:
+ 0x02</code></pre><pre><code class="language-julia">alleles(vs[3])</code></pre><pre><code class="language-none">2-element Array{String,1}:
+ &quot;A&quot;
+ &quot;G&quot;</code></pre><p>For biallelic nonphased genotype data, <code>minor_allele_dosage!(b, v)</code> can be computed. </p><pre><code class="language-julia">minor_allele_dosage!(b, variants[1])</code></pre><pre><code class="language-none">500-element Array{Float64,1}:
  NaN
    0.06274509803921569
    0.08235294117647059
@@ -638,4 +641,433 @@ p = probabilities!(b2, vs[3])</code></pre><pre><code class="language-none">4×4 
  1.0431372549019609
  0.058823529411764705
  1.8941176470588235
- 0.9921568627450981</code></pre></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Friday 19 February 2021 00:03">Friday 19 February 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ 0.9921568627450981</code></pre><pre><code class="language-julia">b = Bgen(BGEN.datadir(&quot;example.8bits.bgen&quot;); 
+    sample_path=BGEN.datadir(&quot;example.sample&quot;), 
+    idx_path=BGEN.datadir(&quot;example.8bits.bgen.bgi&quot;))</code></pre><pre><code class="language-none">Bgen(IOStream(&lt;file /home/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen&gt;), 0x000000000001f6ea, BGEN.Header(0x0000178c, 0x00000014, 0x000000c7, 0x000001f4, 0x01, 0x02, true), [&quot;sample_001&quot;, &quot;sample_002&quot;, &quot;sample_003&quot;, &quot;sample_004&quot;, &quot;sample_005&quot;, &quot;sample_006&quot;, &quot;sample_007&quot;, &quot;sample_008&quot;, &quot;sample_009&quot;, &quot;sample_010&quot;  …  &quot;sample_491&quot;, &quot;sample_492&quot;, &quot;sample_493&quot;, &quot;sample_494&quot;, &quot;sample_495&quot;, &quot;sample_496&quot;, &quot;sample_497&quot;, &quot;sample_498&quot;, &quot;sample_499&quot;, &quot;sample_500&quot;], Index(&quot;/home/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi&quot;, SQLite.DB(&quot;/home/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi&quot;), UInt32[], String[], String[], UInt32[]))</code></pre><pre><code class="language-julia">for (i, v) in enumerate(iterator(b))
+    println(&quot;$i $(v.rsid)&quot;)
+end
+    </code></pre><pre><code class="language-none">1 RSID_101
+2 RSID_2
+3 RSID_102
+4 RSID_3
+5 RSID_103
+6 RSID_4
+7 RSID_104
+8 RSID_5
+9 RSID_105
+10 RSID_6
+11 RSID_106
+12 RSID_7
+13 RSID_107
+14 RSID_8
+15 RSID_108
+16 RSID_9
+17 RSID_109
+18 RSID_10
+19 RSID_100
+20 RSID_110
+21 RSID_11
+22 RSID_111
+23 RSID_12
+24 RSID_112
+25 RSID_13
+26 RSID_113
+27 RSID_14
+28 RSID_114
+29 RSID_15
+30 RSID_115
+31 RSID_16
+32 RSID_116
+33 RSID_17
+34 RSID_117
+35 RSID_18
+36 RSID_118
+37 RSID_19
+38 RSID_119
+39 RSID_20
+40 RSID_120
+41 RSID_21
+42 RSID_121
+43 RSID_22
+44 RSID_122
+45 RSID_23
+46 RSID_123
+47 RSID_24
+48 RSID_124
+49 RSID_25
+50 RSID_125
+51 RSID_26
+52 RSID_126
+53 RSID_27
+54 RSID_127
+55 RSID_28
+56 RSID_128
+57 RSID_29
+58 RSID_129
+59 RSID_30
+60 RSID_130
+61 RSID_31
+62 RSID_131
+63 RSID_32
+64 RSID_132
+65 RSID_33
+66 RSID_133
+67 RSID_34
+68 RSID_134
+69 RSID_35
+70 RSID_135
+71 RSID_36
+72 RSID_136
+73 RSID_37
+74 RSID_137
+75 RSID_38
+76 RSID_138
+77 RSID_39
+78 RSID_139
+79 RSID_40
+80 RSID_140
+81 RSID_41
+82 RSID_141
+83 RSID_42
+84 RSID_142
+85 RSID_43
+86 RSID_143
+87 RSID_44
+88 RSID_144
+89 RSID_45
+90 RSID_145
+91 RSID_46
+92 RSID_146
+93 RSID_47
+94 RSID_147
+95 RSID_48
+96 RSID_148
+97 RSID_49
+98 RSID_149
+99 RSID_50
+100 RSID_150
+101 RSID_51
+102 RSID_151
+103 RSID_52
+104 RSID_152
+105 RSID_53
+106 RSID_153
+107 RSID_54
+108 RSID_154
+109 RSID_55
+110 RSID_155
+111 RSID_56
+112 RSID_156
+113 RSID_57
+114 RSID_157
+115 RSID_58
+116 RSID_158
+117 RSID_59
+118 RSID_159
+119 RSID_60
+120 RSID_160
+121 RSID_61
+122 RSID_161
+123 RSID_62
+124 RSID_162
+125 RSID_63
+126 RSID_163
+127 RSID_64
+128 RSID_164
+129 RSID_65
+130 RSID_165
+131 RSID_66
+132 RSID_166
+133 RSID_67
+134 RSID_167
+135 RSID_68
+136 RSID_168
+137 RSID_69
+138 RSID_169
+139 RSID_70
+140 RSID_170
+141 RSID_71
+142 RSID_171
+143 RSID_72
+144 RSID_172
+145 RSID_73
+146 RSID_173
+147 RSID_74
+148 RSID_174
+149 RSID_75
+150 RSID_175
+151 RSID_76
+152 RSID_176
+153 RSID_77
+154 RSID_177
+155 RSID_78
+156 RSID_178
+157 RSID_79
+158 RSID_179
+159 RSID_80
+160 RSID_180
+161 RSID_81
+162 RSID_181
+163 RSID_82
+164 RSID_182
+165 RSID_83
+166 RSID_183
+167 RSID_84
+168 RSID_184
+169 RSID_85
+170 RSID_185
+171 RSID_86
+172 RSID_186
+173 RSID_87
+174 RSID_187
+175 RSID_88
+176 RSID_188
+177 RSID_89
+178 RSID_189
+179 RSID_90
+180 RSID_190
+181 RSID_91
+182 RSID_191
+183 RSID_92
+184 RSID_192
+185 RSID_93
+186 RSID_193
+187 RSID_94
+188 RSID_194
+189 RSID_95
+190 RSID_195
+191 RSID_96
+192 RSID_196
+193 RSID_97
+194 RSID_197
+195 RSID_98
+196 RSID_198
+197 RSID_99
+198 RSID_199
+199 RSID_200</code></pre><pre><code class="language-julia">bv = BitVector(undef, 500)</code></pre><pre><code class="language-none">500-element BitArray{1}:
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ ⋮
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0
+ 0</code></pre><pre><code class="language-julia">for (i, v) in zip(eachindex(bv), iterator(b))
+    println(&quot;$i $(v.rsid)&quot;)
+end</code></pre><pre><code class="language-none">1 RSID_101
+2 RSID_2
+3 RSID_102
+4 RSID_3
+5 RSID_103
+6 RSID_4
+7 RSID_104
+8 RSID_5
+9 RSID_105
+10 RSID_6
+11 RSID_106
+12 RSID_7
+13 RSID_107
+14 RSID_8
+15 RSID_108
+16 RSID_9
+17 RSID_109
+18 RSID_10
+19 RSID_100
+20 RSID_110
+21 RSID_11
+22 RSID_111
+23 RSID_12
+24 RSID_112
+25 RSID_13
+26 RSID_113
+27 RSID_14
+28 RSID_114
+29 RSID_15
+30 RSID_115
+31 RSID_16
+32 RSID_116
+33 RSID_17
+34 RSID_117
+35 RSID_18
+36 RSID_118
+37 RSID_19
+38 RSID_119
+39 RSID_20
+40 RSID_120
+41 RSID_21
+42 RSID_121
+43 RSID_22
+44 RSID_122
+45 RSID_23
+46 RSID_123
+47 RSID_24
+48 RSID_124
+49 RSID_25
+50 RSID_125
+51 RSID_26
+52 RSID_126
+53 RSID_27
+54 RSID_127
+55 RSID_28
+56 RSID_128
+57 RSID_29
+58 RSID_129
+59 RSID_30
+60 RSID_130
+61 RSID_31
+62 RSID_131
+63 RSID_32
+64 RSID_132
+65 RSID_33
+66 RSID_133
+67 RSID_34
+68 RSID_134
+69 RSID_35
+70 RSID_135
+71 RSID_36
+72 RSID_136
+73 RSID_37
+74 RSID_137
+75 RSID_38
+76 RSID_138
+77 RSID_39
+78 RSID_139
+79 RSID_40
+80 RSID_140
+81 RSID_41
+82 RSID_141
+83 RSID_42
+84 RSID_142
+85 RSID_43
+86 RSID_143
+87 RSID_44
+88 RSID_144
+89 RSID_45
+90 RSID_145
+91 RSID_46
+92 RSID_146
+93 RSID_47
+94 RSID_147
+95 RSID_48
+96 RSID_148
+97 RSID_49
+98 RSID_149
+99 RSID_50
+100 RSID_150
+101 RSID_51
+102 RSID_151
+103 RSID_52
+104 RSID_152
+105 RSID_53
+106 RSID_153
+107 RSID_54
+108 RSID_154
+109 RSID_55
+110 RSID_155
+111 RSID_56
+112 RSID_156
+113 RSID_57
+114 RSID_157
+115 RSID_58
+116 RSID_158
+117 RSID_59
+118 RSID_159
+119 RSID_60
+120 RSID_160
+121 RSID_61
+122 RSID_161
+123 RSID_62
+124 RSID_162
+125 RSID_63
+126 RSID_163
+127 RSID_64
+128 RSID_164
+129 RSID_65
+130 RSID_165
+131 RSID_66
+132 RSID_166
+133 RSID_67
+134 RSID_167
+135 RSID_68
+136 RSID_168
+137 RSID_69
+138 RSID_169
+139 RSID_70
+140 RSID_170
+141 RSID_71
+142 RSID_171
+143 RSID_72
+144 RSID_172
+145 RSID_73
+146 RSID_173
+147 RSID_74
+148 RSID_174
+149 RSID_75
+150 RSID_175
+151 RSID_76
+152 RSID_176
+153 RSID_77
+154 RSID_177
+155 RSID_78
+156 RSID_178
+157 RSID_79
+158 RSID_179
+159 RSID_80
+160 RSID_180
+161 RSID_81
+162 RSID_181
+163 RSID_82
+164 RSID_182
+165 RSID_83
+166 RSID_183
+167 RSID_84
+168 RSID_184
+169 RSID_85
+170 RSID_185
+171 RSID_86
+172 RSID_186
+173 RSID_87
+174 RSID_187
+175 RSID_88
+176 RSID_188
+177 RSID_89
+178 RSID_189
+179 RSID_90
+180 RSID_190
+181 RSID_91
+182 RSID_191
+183 RSID_92
+184 RSID_192
+185 RSID_93
+186 RSID_193
+187 RSID_94
+188 RSID_194
+189 RSID_95
+190 RSID_195
+191 RSID_96
+192 RSID_196
+193 RSID_97
+194 RSID_197
+195 RSID_98
+196 RSID_198
+197 RSID_99
+198 RSID_199
+199 RSID_200</code></pre></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> on <span class="colophon-date" title="Thursday 25 February 2021 21:56">Thursday 25 February 2021</span>. Using Julia version 1.5.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
