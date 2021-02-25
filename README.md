@@ -1,5 +1,6 @@
 # BGEN.jl
-[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://OpenMendel.github.io/BGEN.jl/dev) 
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://OpenMendel.github.io/BGEN.jl/dev)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://OpenMendel.github.io/BGEN.jl/stable)
 [![codecov](https://codecov.io/gh/OpenMendel/BGEN.jl/branch/main/graph/badge.svg?token=W28QPREGC7)](https://codecov.io/gh/OpenMendel/BGEN.jl)
 [![build Actions Status](https://github.com/OpenMendel/BGEN.jl/workflows/CI/badge.svg)](https://github.com/OpenMendel/BGEN.jl/actions)
 
