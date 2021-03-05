@@ -345,11 +345,13 @@ function find_minor_allele(data::Vector{<:AbstractFloat}, p::Preamble)
     increment = max(p.n_samples ÷ batchsize, 1)
     total = 0.0
     freq = 0.0
+    cnt = 0
     for idx2 in 1:increment
         for n in idx2:increment:p.n_samples
+            cnt += 1
             total += data[n]
         end
-        freq = total / (batchsize * idx2 * 2)
+        freq = total / (cnt * 2)
         @assert 0 <= freq <= 1
         if minor_certain(freq, batchsize * idx2, 5.0)
             break
