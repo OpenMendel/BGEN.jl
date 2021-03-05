@@ -13,10 +13,10 @@ const Samples = Vector{String}
 struct Index
     path::String
     db::SQLite.DB
-    offsets::Vector{UInt32}
+    offsets::Vector{UInt64}
     rsids::Vector{String}
     chroms::Vector{String}
-    positions::Vector{UInt64}
+    positions::Vector{UInt32}
 end
 
 struct Preamble
