@@ -257,7 +257,7 @@ function ref_dosage_fast!(data::Vector{<:AbstractFloat}, p::Preamble,
     @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy
     idx1 = idx[1]
     if p.n_samples >= 2
-        for n in 1:2:(p.n_samples - p.n_samples % 2)
+        @inbounds for n in 1:2:(p.n_samples - p.n_samples % 2)
             idx_base = idx1 + ((n-1) >> 1) << 2
             data[n] = lookup[(convert(UInt16, d[idx_base]) << 1) +
                                 d[idx_base + 1] + 1]
