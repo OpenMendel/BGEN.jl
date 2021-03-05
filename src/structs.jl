@@ -16,7 +16,7 @@ struct Index
     offsets::Vector{UInt32}
     rsids::Vector{String}
     chroms::Vector{String}
-    positions::Vector{UInt32}
+    positions::Vector{UInt64}
 end
 
 struct Preamble
