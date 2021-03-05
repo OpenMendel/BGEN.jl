@@ -267,7 +267,7 @@ function ref_dosage_fast!(data::Vector{<:AbstractFloat}, p::Preamble,
     end
     if p.n_samples % 2 == 1
         idx_base = idx1 + ((p.n_samples - 1) << 1)
-        data[n_samples] = lookup[(convert(UInt16, d[idx_base]) << 1) +
+        data[p.n_samples] = lookup[(convert(UInt16, d[idx_base]) << 1) +
                             d[idx_base + 1] + 1]
     end
     return data
