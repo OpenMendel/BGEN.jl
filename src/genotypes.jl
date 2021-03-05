@@ -273,17 +273,17 @@ function ref_dosage_fast!(data::Vector{<:AbstractFloat}, p::Preamble,
     return data
 end
 
-const  one_255th = 1.0f0 / 255.0f0
-function ref_dosage_fast2!(data::Vector{Float32}, p::Preamble,
+const one_255th = 1.0f0 / 255.0f0
+const mask_odd = reinterpret(Vec{16, UInt16}, Vec{32, UInt8}(
+    tuple(repeat([0xff, 0x00], 16)...)))
+const mask_even = reinterpret(Vec{16, UInt16}, Vec{32, UInt8}(
+    tuple(repeat([0x00, 0xff], 16)...)))
+function ref_dosage_fast!(data::Vector{Float32}, p::Preamble,
     d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8
     )
     @assert layout == 2
     @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy
     idx1 = idx[1]
-    mask_odd = reinterpret(Vec{16, UInt16}, Vec{32, UInt8}(
-        tuple(repeat([0xff, 0x00], 16)...)))
-    mask_even = reinterpret(Vec{16, UInt16}, Vec{32, UInt8}(
-        tuple(repeat([0x00, 0xff], 16)...)))
 
     if p.n_samples >= 16
         @inbounds for n in 1:16:(p.n_samples - p.n_samples % 8)
@@ -531,7 +531,7 @@ function minor_allele_dosage!(b::Bgen, v::Variant;
     resize!(genotypes.dose, h.n_samples)
     if p.max_ploidy == p.min_ploidy && p.max_probs == 3 && p.bit_depth == 8 &&
             b.header.layout == 2
-        ref_dosage_fast2!(genotypes.dose, p, decompressed, idx, h.layout)
+        ref_dosage_fast!(genotypes.dose, p, decompressed, idx, h.layout)
     else
         ref_dosage_slow!(genotypes.dose, p, decompressed, idx, h.layout)
     end
