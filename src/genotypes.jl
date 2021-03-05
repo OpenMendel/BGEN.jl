@@ -1,5 +1,5 @@
 const lookup = [i / 255 for i in 0:510]
-
+using SIMD
 @inline function unsafe_load_UInt64(v::Vector{UInt8}, i::Integer)
     p = convert(Ptr{UInt64}, pointer(v, i))
     unsafe_load(p)
@@ -40,7 +40,7 @@ function decompress(io::IOStream, v::Variant, h::Header;
     if compression == 0
         decompressed = buffer_compressed
     elseif compression == 1
-        decompressed = transcode(GzipDecompressor,
+        decompressed = transcode(ZlibDecompressor,
             (buffer_compressed))
     elseif compression == 2
         decompressed = transcode(ZstdDecompressor,
@@ -267,12 +267,46 @@ function ref_dosage_fast!(data::Vector{<:AbstractFloat}, p::Preamble,
     end
     if p.n_samples % 2 == 1
         idx_base = idx1 + ((p.n_samples - 1) << 1)
-        data[p.n_samples] = lookup[(convert(UInt16, d[idx_base]) << 1) +
+        data[p.n_samples] = lookup[d[idx_base] * 2 +
                             d[idx_base + 1] + 1]
     end
     return data
 end
 
+const  one_255th = 1.0f0 / 255.0f0
+function ref_dosage_fast2!(data::Vector{Float32}, p::Preamble,
+    d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8
+    )
+    @assert layout == 2
+    @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy
+    idx1 = idx[1]
+    mask_odd = reinterpret(Vec{16, UInt16}, Vec{32, UInt8}(
+        tuple(repeat([0xff, 0x00], 16)...)))
+    mask_even = reinterpret(Vec{16, UInt16}, Vec{32, UInt8}(
+        tuple(repeat([0x00, 0xff], 16)...)))
+
+    if p.n_samples >= 16
+        @inbounds for n in 1:16:(p.n_samples - p.n_samples % 8)
+            idx_base = idx1 + ((n-1) >> 1) << 2
+            r = reinterpret(Vec{16, UInt16}, vload(Vec{32, UInt8}, d, idx_base))
+            second = (r & mask_even) >> 8
+            first  = (r & mask_odd) << 1
+            dosage_level = first + second
+            dosage_level_float = one_255th * convert(
+                Vec{16, Float32}, dosage_level)
+            vstore(dosage_level_float, data, n)
+        end
+    end
+    rem = p.n_samples % 16
+    if p.n_samples % 16 != 0
+        @inbounds for n in ((p.n_samples - rem) + 1) : p.n_samples
+            idx_base = idx1 + ((n - 1) << 1)
+            data[n] = lookup[d[idx_base] * 2 +
+                                d[idx_base + 1] + 1]
+        end
+    end
+    return data
+end
 """
     ref_dosage_slow!(data, p, d, idx, layout)
 Dosage computation for general case.
@@ -403,7 +437,7 @@ function _get_prob_matrix(d::Vector{T}, p::Preamble) where T <: AbstractFloat
 end
 
 """
-    probabilities!(b::Bgen, v::Variant; T=Float64, clear_decompressed=false)
+    probabilities!(b::Bgen, v::Variant; T=Float32, clear_decompressed=false)
 Given a `Bgen` struct and a `Variant`, compute probabilities.
 The result is stored inside `v.genotypes[1].probs`, which can be cleared using
 `clear!(v)`.
@@ -412,7 +446,7 @@ The result is stored inside `v.genotypes[1].probs`, which can be cleared using
 - `clear_decompressed`: clears decompressed byte string after execution if set `true`
 """
 function probabilities!(b::Bgen, v::Variant;
-        T=Float64, clear_decompressed=false)
+        T=Float32, clear_decompressed=false)
     io, h = b.io, b.header
     if length(v.genotypes) == 0 || length(v.genotypes[1].decompressed) == 0
         decompressed = decompress(io, v, h)
@@ -450,7 +484,7 @@ function probabilities!(b::Bgen, v::Variant;
 end
 
 """
-    minor_allele_dosage!(b::Bgen, v::Variant; T=Float64,
+    minor_allele_dosage!(b::Bgen, v::Variant; T=Float32,
     mean_impute=false, clear_decompressed=false)
 Given a `Bgen` struct and a `Variant`, compute minor allele dosage.
 The result is stored inside `v.genotypes[1].dose`, which can be cleared using
@@ -461,7 +495,7 @@ The result is stored inside `v.genotypes[1].dose`, which can be cleared using
 - `clear_decompressed`: clears decompressed byte string after execution if set `true`
 """
 function minor_allele_dosage!(b::Bgen, v::Variant;
-        T=Float64, mean_impute=false, clear_decompressed=false)
+        T=Float32, mean_impute=false, clear_decompressed=false)
     io, h = b.io, b.header
     # just return it if already computed
     if length(v.genotypes) == 1 && length(v.genotypes[1].dose) == h.n_samples
@@ -497,7 +531,7 @@ function minor_allele_dosage!(b::Bgen, v::Variant;
     resize!(genotypes.dose, h.n_samples)
     if p.max_ploidy == p.min_ploidy && p.max_probs == 3 && p.bit_depth == 8 &&
             b.header.layout == 2
-        ref_dosage_fast!(genotypes.dose, p, decompressed, idx, h.layout)
+        ref_dosage_fast2!(genotypes.dose, p, decompressed, idx, h.layout)
     else
         ref_dosage_slow!(genotypes.dose, p, decompressed, idx, h.layout)
     end
