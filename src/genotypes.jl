@@ -1,5 +1,4 @@
 const lookup = [i / 255 for i in 0:510]
-using SIMD
 @inline function unsafe_load_UInt64(v::Vector{UInt8}, i::Integer)
     p = convert(Ptr{UInt64}, pointer(v, i))
     unsafe_load(p)
@@ -13,6 +12,8 @@ function Genotypes{T}(p::Preamble, d::Vector{UInt8}) where T <: AbstractFloat
     Genotypes{T}(p, d, T[], UInt8[0], T[])
 end
 
+const zlib = ZlibDecompressor()
+const zst = ZstdDecompressor()
 """
     decompress(io, v, h; decompressed=nothing)
 Decompress the compressed byte string for genotypes.
@@ -34,19 +35,30 @@ function decompress(io::IOStream, v::Variant, h::Header;
     if decompressed !== nothing
         @assert length(decompressed) ==
             decompressed_length "decompressed length mismatch"
+    else
+        decompressed = Vector{UInt8}(undef, decompressed_length)
     end
     compressed_length = v.next_var_offset - v.geno_offset - decompressed_field
     buffer_compressed = read(io, compressed_length)
     if compression == 0
-        decompressed = buffer_compressed
-    elseif compression == 1
-        decompressed = transcode(ZlibDecompressor,
-            (buffer_compressed))
-    elseif compression == 2
-        decompressed = transcode(ZstdDecompressor,
-            (buffer_compressed))
+        decompressed .= buffer_compressed
     else
-        @error "invalid compression"
+        if compression == 1 
+            codec = zlib
+        elseif compression == 2
+            codec = zst
+        else
+            @error "invalid compression"
+        end
+        input = Buffer(buffer_compressed)
+        output = Buffer(decompressed)
+        error = Error()
+        initialize(codec)
+        _, _, e = process(codec, buffermem(input), buffermem(output), error)
+        if e === :error
+            throw(error[])
+        end
+        finalize(codec)
     end
     return decompressed
 end

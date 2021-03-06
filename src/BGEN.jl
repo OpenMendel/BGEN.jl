@@ -3,6 +3,7 @@ import Base: length, getindex, setindex, firstindex, lastindex, eltype, size,
             iterate, close
 import Tables: columntable
 import Statistics: mean
+import TranscodingStreams: initialize, finalize, buffermem, process, Buffer, Error
 export Bgen, Samples, Variant, Genotypes, Index
 export io, fsize, samples, n_samples, n_variants, compression
 export varid, rsid, chrom, pos, n_alleles, alleles, minor_allele, major_allele
@@ -11,7 +12,7 @@ export parse_variants, iterator, probabilities!, minor_allele_dosage!, clear!
 export select_region, variant_by_rsid, variant_by_pos, variant_by_index
 export rsids, chroms, positions
 export VariantIteratorFromStart, VariantIteratorFromOffsets
-using CodecZlib, CodecZstd, SQLite
+using CodecZlib, CodecZstd, SQLite, SIMD
 include("structs.jl")
 include("iterator.jl")
 include("header.jl")
