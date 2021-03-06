@@ -15,10 +15,10 @@ end
 const zlib = ZlibDecompressor()
 
 @inline function zstd_uncompress(input::Vector{UInt8}, output::Vector{UInt8})
-    ccall((:ZSTD_decompress, CodecZstd.libzstd),
+    r = ccall((:ZSTD_decompress, CodecZstd.libzstd),
         Csize_t, (Ptr{Cchar}, Cint, Ptr{Cchar}, Cint),
         pointer(output), length(output), pointer(input), length(input))
-    #@assert r == length(output) "zstd decompression returned data of wrong length"
+    @assert r == length(output) "zstd decompression returned data of wrong length"
 end
 
 """
@@ -79,12 +79,12 @@ end
     parse_ploidy!(ploidy, d, idx, n_samples)
 Parse ploidy part of the preamble.
 """
-function parse_ploidy!(ploidy::AbstractVector{UInt8}, d::AbstractVector{UInt8},
+function parse_ploidy!(ploidy::Union{UInt8,AbstractVector{UInt8}}, d::AbstractVector{UInt8},
     idx::Vector{<:Integer}, n_samples::Integer)
     missings = Int[]
     mask = 0x3f # 63 in UInt8
     mask_8 = 0x8080808080808080 # UInt64, mask for missingness
-    if ploidy[1] != 0 # if constant ploidy, just scan for missingness
+    if typeof(ploidy) == UInt8 # if constant ploidy, just scan for missingness
         # check eight samples at a time
         idx1 = idx[1]
         if n_samples >= 8
@@ -132,8 +132,8 @@ function parse_preamble!(d::AbstractVector{UInt8}, idx::Vector{<:Integer},
         n_samples = h.n_samples
         n_alleles = 2
         phased = false
-        min_ploidy = 2
-        max_ploidy = 2
+        min_ploidy = 0x02
+        max_ploidy = 0x02
         bit_depth = 16
     elseif h.layout == 2
         n_samples = reinterpret(UInt32, @view(d[idx[1]:idx[1]+3]))[1]
@@ -150,10 +150,11 @@ function parse_preamble!(d::AbstractVector{UInt8}, idx::Vector{<:Integer},
         @error "invalid layout"
     end
     constant_ploidy = (min_ploidy == max_ploidy)
-    ploidy = Vector{UInt8}(undef, n_samples)
+
     if constant_ploidy
-        fill!(ploidy, max_ploidy)
+        ploidy = max_ploidy
     else
+        ploidy = Vector{UInt8}(undef, n_samples)
         fill!(ploidy, 0)
     end
     missings = []
@@ -305,6 +306,7 @@ const mask_even = reinterpret(Vec{16, UInt16}, Vec{32, UInt8}(
 function ref_dosage_fast!(data::Vector{Float32}, p::Preamble,
     d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8
     )
+    @assert length(data) == p.n_samples
     @assert layout == 2
     @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy
     idx1 = idx[1]
@@ -446,12 +448,23 @@ function _get_prob_matrix(d::Vector{T}, p::Preamble) where T <: AbstractFloat
         current = 1
         ragged = Matrix{T}(undef, p.max_ploidy * p.max_probs, p.n_samples)
         fill!(ragged, NaN)
-        for (i, v) in enumerate(p.ploidy)
-            for j in 1:v
-                first = (j-1) * p.max_probs + 1
-                last = j * p.max_probs
-                ragged[first:last, i] = reshaped[:, current]
-                current += 1
+        if p.max_ploidy == p.min_ploidy
+            for i in 1:p.n_samples
+                for j in 1:p.max_ploidy
+                    first = (j-1) * p.max_probs + 1
+                    last = j * p.max_probs
+                    ragged[first:last, i] = reshaped[:, current]
+                    current += 1                    
+                end
+            end
+        else
+            for (i, v) in enumerate(p.ploidy)
+                for j in 1:v
+                    first = (j-1) * p.max_probs + 1
+                    last = j * p.max_probs
+                    ragged[first:last, i] = reshaped[:, current]
+                    current += 1
+                end
             end
         end
         return ragged
@@ -470,10 +483,10 @@ The result is stored inside `v.genotypes[1].probs`, which can be cleared using
 - `clear_decompressed`: clears decompressed byte string after execution if set `true`
 """
 function probabilities!(b::Bgen, v::Variant;
-        T=Float32, clear_decompressed=false)
+        T=Float32, clear_decompressed=false, data=nothing, decompressed=nothing)
     io, h = b.io, b.header
     if length(v.genotypes) == 0 || length(v.genotypes[1].decompressed) == 0
-        decompressed = decompress(io, v, h)
+        decompressed = decompress(io, v, h; decompressed=decompressed)
     else
         decompressed = v.genotypes[1].decompressed
     end
@@ -495,20 +508,27 @@ function probabilities!(b::Bgen, v::Variant;
     if length(genotypes.probs) >= data_size
         _get_prob_matrix(genotypes.probs, p)
     end
-    resize!(genotypes.probs, data_size)
+    
+    if data !== nothing
+        @assert length(data) == data_size
+    else
+        resize!(genotypes.probs, data_size)
+        data = genotypes.probs
+    end
     if h.layout == 1
-        parse_layout1!(genotypes.probs, p, decompressed, idx)
+        parse_layout1!(data, p, decompressed, idx)
     elseif h.layout == 2
-        parse_layout2!(genotypes.probs, p, decompressed, idx)
+        parse_layout2!(data, p, decompressed, idx)
     end
     if clear_decompressed
         clear_decompressed!(genotypes)
     end
-    return _get_prob_matrix(genotypes.probs, p)
+    return _get_prob_matrix(data, p)
 end
 
 function ref_allele_dosage!(b::Bgen, v::Variant;
-        T=Float32, mean_impute=false, clear_decompressed=false)
+        T=Float32, mean_impute=false, clear_decompressed=false, 
+        data=nothing, decompressed=nothing)
     io, h = b.io, b.header
     # just return it if already computed
     if length(v.genotypes) == 1 && length(v.genotypes[1].dose) == h.n_samples
@@ -521,7 +541,7 @@ function ref_allele_dosage!(b::Bgen, v::Variant;
         return v.genotypes[1].dose
     end
     if length(v.genotypes) == 0 || length(v.genotypes[1].decompressed) == 0
-        decompressed = decompress(io, v, h)
+        decompressed = decompress(io, v, h; decompressed=decompressed)
     else
         decompressed = v.genotypes[1].decompressed
     end
@@ -540,19 +560,23 @@ function ref_allele_dosage!(b::Bgen, v::Variant;
     @assert p.n_alleles == 2 "allele dosages are available for non-biallelic var"
 
     genotypes = v.genotypes[1]
-
-    resize!(genotypes.dose, h.n_samples)
+    if data !== nothing
+        @assert length(data) == h.n_samples
+    else
+        resize!(genotypes.dose, h.n_samples)
+        data = genotypes.dose
+    end
     if p.max_ploidy == p.min_ploidy && p.max_probs == 3 && p.bit_depth == 8 &&
             b.header.layout == 2
-        ref_dosage_fast!(genotypes.dose, p, decompressed, idx, h.layout)
+        ref_dosage_fast!(data, p, decompressed, idx, h.layout)
     else
-        ref_dosage_slow!(genotypes.dose, p, decompressed, idx, h.layout)
+        ref_dosage_slow!(data, p, decompressed, idx, h.layout)
     end
 
-    genotypes.minor_idx[1] = find_minor_allele(genotypes.dose, p)
-    genotypes.dose[p.missings] .= NaN
+    genotypes.minor_idx[1] = find_minor_allele(data, p)
+    data[p.missings] .= NaN
     if mean_impute
-        genotypes.dose[p.missings] .= mean(filter(!isnan, genotypes.dose))
+        data[p.missings] .= mean(filter(!isnan, data))
     end
     if clear_decompressed
         clear_decompressed!(genotypes)
@@ -571,13 +595,18 @@ The result is stored inside `v.genotypes[1].dose`, which can be cleared using
 - `clear_decompressed`: clears decompressed byte string after execution if set `true`
 """
 function minor_allele_dosage!(b::Bgen, v::Variant;
-        T=Float32, mean_impute=false, clear_decompressed=false)
-    ref_allele_dosage!(b, v; T=T, mean_impute=mean_impute, clear_decompressed=clear_decompressed)
+        T=Float32, mean_impute=false, clear_decompressed=false, 
+        data=nothing, decompressed=nothing)
+    ref_allele_dosage!(b, v; T=T, mean_impute=mean_impute, 
+        clear_decompressed=clear_decompressed, data=data, decompressed=decompressed)
     genotypes = v.genotypes[1]
-    if genotypes.minor_idx[1] != 1
-        alt_dosage!(genotypes.dose, genotypes.preamble)
+    if data === nothing
+        data = genotypes.dose
     end
-    return genotypes.dose
+    if genotypes.minor_idx[1] != 1
+        alt_dosage!(data, genotypes.preamble)
+    end
+    return data
 end
 
 """

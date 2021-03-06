@@ -25,7 +25,7 @@ struct Preamble
     phased::UInt8
     min_ploidy::UInt8
     max_ploidy::UInt8
-    ploidy::Vector{UInt8}
+    ploidy::Union{UInt8, Vector{UInt8}}
     bit_depth::UInt8
     max_probs::Int
     missings::Vector{Int}
