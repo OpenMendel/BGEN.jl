@@ -13,7 +13,14 @@ function Genotypes{T}(p::Preamble, d::Vector{UInt8}) where T <: AbstractFloat
 end
 
 const zlib = ZlibDecompressor()
-const zst = ZstdDecompressor()
+
+@inline function zstd_uncompress(input::Vector{UInt8}, output::Vector{UInt8})
+    ccall((:ZSTD_decompress, CodecZstd.libzstd),
+        Csize_t, (Ptr{Cchar}, Cint, Ptr{Cchar}, Cint),
+        pointer(output), length(output), pointer(input), length(input))
+    #@assert r == length(output) "zstd decompression returned data of wrong length"
+end
+
 """
     decompress(io, v, h; decompressed=nothing)
 Decompress the compressed byte string for genotypes.
@@ -46,19 +53,24 @@ function decompress(io::IOStream, v::Variant, h::Header;
         if compression == 1 
             codec = zlib
         elseif compression == 2
-            codec = zst
+            codec = nothing
         else
             @error "invalid compression"
         end
-        input = Buffer(buffer_compressed)
-        output = Buffer(decompressed)
-        error = Error()
-        initialize(codec)
-        _, _, e = process(codec, buffermem(input), buffermem(output), error)
-        if e === :error
-            throw(error[])
+
+        if compression == 1
+            input = Buffer(buffer_compressed)
+            output = Buffer(decompressed)
+            error = Error()
+            initialize(codec)
+            _, _, e = process(codec, buffermem(input), buffermem(output), error)
+            if e === :error
+                throw(error[])
+            end
+            finalize(codec)
+        elseif compression == 2
+            zstd_uncompress(buffer_compressed, decompressed)
         end
-        finalize(codec)
     end
     return decompressed
 end
@@ -495,18 +507,7 @@ function probabilities!(b::Bgen, v::Variant;
     return _get_prob_matrix(genotypes.probs, p)
 end
 
-"""
-    minor_allele_dosage!(b::Bgen, v::Variant; T=Float32,
-    mean_impute=false, clear_decompressed=false)
-Given a `Bgen` struct and a `Variant`, compute minor allele dosage.
-The result is stored inside `v.genotypes[1].dose`, which can be cleared using
-`clear!(v)`.
-
-- `T`: type for the results
-- `mean_impute`: impute missing values with the mean of nonmissing values
-- `clear_decompressed`: clears decompressed byte string after execution if set `true`
-"""
-function minor_allele_dosage!(b::Bgen, v::Variant;
+function ref_allele_dosage!(b::Bgen, v::Variant;
         T=Float32, mean_impute=false, clear_decompressed=false)
     io, h = b.io, b.header
     # just return it if already computed
@@ -549,16 +550,32 @@ function minor_allele_dosage!(b::Bgen, v::Variant;
     end
 
     genotypes.minor_idx[1] = find_minor_allele(genotypes.dose, p)
-    if genotypes.minor_idx[1] != 1
-        alt_dosage!(genotypes.dose, p)
-    end
-
     genotypes.dose[p.missings] .= NaN
     if mean_impute
         genotypes.dose[p.missings] .= mean(filter(!isnan, genotypes.dose))
     end
     if clear_decompressed
         clear_decompressed!(genotypes)
+    end
+end
+
+"""
+    minor_allele_dosage!(b::Bgen, v::Variant; T=Float32,
+    mean_impute=false, clear_decompressed=false)
+Given a `Bgen` struct and a `Variant`, compute minor allele dosage.
+The result is stored inside `v.genotypes[1].dose`, which can be cleared using
+`clear!(v)`.
+
+- `T`: type for the results
+- `mean_impute`: impute missing values with the mean of nonmissing values
+- `clear_decompressed`: clears decompressed byte string after execution if set `true`
+"""
+function minor_allele_dosage!(b::Bgen, v::Variant;
+        T=Float32, mean_impute=false, clear_decompressed=false)
+    ref_allele_dosage!(b, v; T=T, mean_impute=mean_impute, clear_decompressed=clear_decompressed)
+    genotypes = v.genotypes[1]
+    if genotypes.minor_idx[1] != 1
+        alt_dosage!(genotypes.dose, genotypes.preamble)
     end
     return genotypes.dose
 end
