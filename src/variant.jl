@@ -85,6 +85,7 @@ end
         v.alleles[v.genotypes[1].minor_idx[1]]
     end
 end
+
 @inline function major_allele(v::Variant)
     midx = v.genotypes[1].minor_idx[1]
     if midx == 0

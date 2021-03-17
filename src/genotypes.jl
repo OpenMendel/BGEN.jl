@@ -275,44 +275,21 @@ end
     ref_dosage_fast!(data, p, d, idx, layout)
 Dosage retrieval for 8-bit biallele case, no floating-point operations!
 """
-function ref_dosage_fast!(data::Vector{<:AbstractFloat}, p::Preamble,
-    d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8
-    )
-    @assert layout == 2
-    @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy
-    idx1 = idx[1]
-    if p.n_samples >= 2
-        @inbounds for n in 1:2:(p.n_samples - p.n_samples % 2)
-            idx_base = idx1 + ((n-1) >> 1) << 2
-            data[n] = lookup[d[idx_base] * 2 + 
-                                d[idx_base + 1] + 1]
-            data[n+1] = lookup[d[idx_base + 2] * 2 + 
-                                d[idx_base + 3] + 1]
-        end
-    end
-    if p.n_samples % 2 == 1
-        idx_base = idx1 + ((p.n_samples - 1) << 1)
-        data[p.n_samples] = lookup[d[idx_base] * 2 +
-                            d[idx_base + 1] + 1]
-    end
-    return data
-end
-
 const one_255th = 1.0f0 / 255.0f0
 const mask_odd = reinterpret(Vec{16, UInt16}, Vec{32, UInt8}(
     tuple(repeat([0xff, 0x00], 16)...)))
 const mask_even = reinterpret(Vec{16, UInt16}, Vec{32, UInt8}(
     tuple(repeat([0x00, 0xff], 16)...)))
-function ref_dosage_fast!(data::Vector{Float32}, p::Preamble,
+function ref_dosage_fast!(data::Vector{T}, p::Preamble,
     d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8
-    )
+    ) where {T <:AbstractFloat}
     @assert length(data) == p.n_samples
     @assert layout == 2
     @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy
     idx1 = idx[1]
 
     if p.n_samples >= 16
-        @inbounds for n in 1:16:(p.n_samples - p.n_samples % 8)
+        @inbounds for n in 1:16:(p.n_samples - p.n_samples % 16)
             idx_base = idx1 + ((n-1) >> 1) << 2
             r = reinterpret(Vec{16, UInt16}, vload(Vec{32, UInt8}, d, idx_base))
             second = (r & mask_even) >> 8
@@ -324,7 +301,7 @@ function ref_dosage_fast!(data::Vector{Float32}, p::Preamble,
         end
     end
     rem = p.n_samples % 16
-    if p.n_samples % 16 != 0
+    if rem != 0
         @inbounds for n in ((p.n_samples - rem) + 1) : p.n_samples
             idx_base = idx1 + ((n - 1) << 1)
             data[n] = lookup[d[idx_base] * 2 +
@@ -333,6 +310,7 @@ function ref_dosage_fast!(data::Vector{Float32}, p::Preamble,
     end
     return data
 end
+
 """
     ref_dosage_slow!(data, p, d, idx, layout)
 Dosage computation for general case.
@@ -442,7 +420,7 @@ end
     end
 end
 
-function _get_prob_matrix(d::Vector{T}, p::Preamble) where T <: AbstractFloat
+function _get_prob_matrix(d::Vector{T}, p::Preamble) where {T <: AbstractFloat}
     reshaped = reshape(d, p.max_probs, :)
     if p.phased == 1
         current = 1
@@ -557,7 +535,7 @@ function ref_allele_dosage!(b::Bgen, v::Variant;
     end
 
     @assert p.phased == 0
-    @assert p.n_alleles == 2 "allele dosages are available for non-biallelic var"
+    @assert p.n_alleles == 2 "allele dosages are available for biallelic variants"
 
     genotypes = v.genotypes[1]
     if data !== nothing
