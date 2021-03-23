@@ -208,7 +208,7 @@ function counts!(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layout::
                 if rmask !== nothing
                     s = s * rs
                 end
-                for i in 1:16
+                @inbounds or i in 1:16
                     ss = s[i]
                     res[ss + 1] += 1
                 end

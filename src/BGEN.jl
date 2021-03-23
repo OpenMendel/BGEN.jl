@@ -3,7 +3,6 @@ import Base: length, getindex, setindex, firstindex, lastindex, eltype, size,
             iterate, close, Iterators.filter
 import Tables: columntable
 import Statistics: mean
-import StatsBase: counts
 import SpecialFunctions: gamma_inc
 import TranscodingStreams: initialize, finalize, buffermem, process, Buffer, Error
 export Bgen, Samples, Variant, Genotypes, Index
