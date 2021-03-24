@@ -138,8 +138,15 @@ function info_score(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layou
     @assert length(p.missings) == 0 "current implementation does not allow missingness"
     idx1 = idx[1]
     # "counts" times 255.
+    samples_cum = 0
+    mean_cum = 0.0
+    sumsq_cum = 0.0
     dosage_sum = 0.0
     dosage_sumsq = 0.0
+    rs = Vec{16,UInt16}((1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1))
+    rs_float = Vec{16, Float32}((1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1))
+    rs_float_ones = rs_float
+    rs_floatarr = ones(Float32, 16)
     if p.n_samples >= 16
         @inbounds for n in 1:16:(p.n_samples - p.n_samples % 16)
             idx_base = idx1 + ((n-1) >> 1) << 2
@@ -147,6 +154,11 @@ function info_score(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layou
                 rs = vload(Vec{16,UInt16}, rmask, n)
                 if sum(rs) == 0
                     continue
+                elseif sum(rs) == 16
+                    rs_float = rs_float_ones
+                else
+                    rs_floatarr .= @view(rmask[n:n+15])
+                    rs_float = vload(Vec{16, Float32}, rs_floatarr, 1)
                 end
             end
             r = reinterpret(Vec{16, UInt16}, vload(Vec{32, UInt8}, d, idx_base))
@@ -158,9 +170,19 @@ function info_score(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layou
             end
             dosage_float = one_255th * convert(
                 Vec{16, Float32}, s)
-            dosage_floatsq = dosage_float ^ 2
-            dosage_sum += sum(dosage_float)
-            dosage_sumsq += sum(dosage_floatsq)
+            samples_new = sum(rs)
+            sum_new = sum(dosage_float)
+            samples_prev = samples_cum
+            samples_cum = samples_cum + samples_new
+            mean_new = sum_new / samples_new
+            diff = dosage_float - mean_new
+            if rmask !== nothing
+                diff *= rs_float
+            end
+            sumsq_new = sum(diff ^ 2)
+            delta = mean_new - mean_cum
+            mean_cum += delta * samples_new / samples_cum
+            sumsq_cum += sumsq_new + delta ^ 2 * samples_prev * samples_new / samples_cum
         end
     end
     rem = p.n_samples % 16
@@ -169,28 +191,31 @@ function info_score(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layou
             rmask !== nothing && rmask[n] == 0 && continue
             idx_base = idx1 + ((n - 1) << 1)
             dosage = one_255th * (2 * d[idx_base] + d[idx_base + 1])
-            dosage_sum += dosage
-            dosage_sumsq += dosage ^ 2
+            delta = dosage - mean_cum
+            samples_cum += 1
+            mean_cum += delta / samples_cum
+            delta2 = dosage - mean_cum
+            sumsq_cum += delta * delta2
         end
     end
     n_samples = rmask !== nothing ? sum(rmask) : p.n_samples
-    p = dosage_sum / 2n_samples 
-    v = (dosage_sumsq / n_samples - (2p) ^ 2) * n_samples / (n_samples - 1)
+    p = mean_cum / 2
+    v = sumsq_cum / (n_samples - 1)
     v / (2p * (1-p))
 end
 
 function counts!(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8, 
-    rmask::Union{Nothing, Vector{UInt16}}; res::Union{Nothing,Vector{<:Integer}}=nothing, dosage::Bool=true)
+    rmask::Union{Nothing, Vector{UInt16}}; r::Union{Nothing,Vector{<:Integer}}=nothing, dosage::Bool=true)
     if dosage
         @assert layout == 2 "hwe only supported for layout 2"
         @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy 
         @assert length(p.missings) == 0 "current implementation does not allow missingness"
         idx1 = idx[1]
-        if res !== nothing
-            @assert length(res) == 512 
-            fill!(res, 0)
+        if r !== nothing
+            @assert length(r) == 512 
+            fill!(r, 0)
         else
-            res = zeros(UInt, 512)
+            r = zeros(UInt, 512)
         end
         if p.n_samples >= 16
             @inbounds for n in 1:16:(p.n_samples - p.n_samples % 16)
@@ -201,16 +226,16 @@ function counts!(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layout::
                         continue
                     end
                 end
-                r = reinterpret(Vec{16, UInt16}, vload(Vec{32, UInt8}, d, idx_base))
-                first  = (r & mask_odd)  << 1
-                second = (r & mask_even) >> 8
+                q = reinterpret(Vec{16, UInt16}, vload(Vec{32, UInt8}, d, idx_base))
+                first  = (q & mask_odd)  << 1
+                second = (q & mask_even) >> 8
                 s = first + second
                 if rmask !== nothing
                     s = s * rs
                 end
                 @inbounds for i in 1:16
                     ss = s[i]
-                    res[ss + 1] += 1
+                    r[ss + 1] += 1
                 end
             end
         end
@@ -219,13 +244,13 @@ function counts!(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layout::
             @inbounds for n in ((p.n_samples - rem) + 1) : p.n_samples
                 rmask !== nothing && rmask[n] == 0 && continue
                 idx_base = idx1 + ((n - 1) << 1)
-                res[2 * d[idx_base] + d[idx_base + 1]] += 1
+                r[2 * d[idx_base] + d[idx_base + 1]] += 1
             end
         end
     else
         @error "counts for non-dosage not implemented yet"
     end
-    res
+    r
 end
 
 for ftn in [:maf, :hwe, :info_score, :counts!]

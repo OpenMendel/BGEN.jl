@@ -47,8 +47,7 @@ end
 @testset "preamble" begin
     io, v, h = bgen.io, parse_variants(bgen)[1], bgen.header
     decompressed = BGEN.decompress(io, v, h)
-    idx = [1]
-    preamble = BGEN.parse_preamble!(decompressed, idx, h, v)
+    preamble = BGEN.parse_preamble(decompressed, h, v)
     @test preamble.phased == 0
     @test preamble.min_ploidy == 2
     @test preamble.max_ploidy == 2

@@ -48,7 +48,7 @@ function Variant(io::IOStream, offset::Integer,
     next_var_offset = geno_offset + geno_block_size
 
     Variant(offset, geno_offset, next_var_offset, geno_block_size, n_samples,
-        varid, rsid, chrom, pos, n_alleles, alleles, [])
+        varid, rsid, chrom, pos, n_alleles, alleles, nothing)
 end
 
 function Variant(b::Bgen, offset::Integer)
@@ -69,29 +69,29 @@ end
 
 # The following functions are valid only after calling `probabilities!()`
 # or `minor_allele_dosage!()`
-@inline phased(v::Variant) = v.genotypes[1].preamble.phased
-@inline min_ploidy(v::Variant) = v.genotypes[1].preamble.min_ploidy
-@inline max_ploidy(v::Variant) = v.genotypes[1].preamble.max_ploidy
-@inline ploidy(v::Variant) = v.genotypes[1].preamble.ploidy
-@inline bit_depth(v::Variant) = v.genotypes[1].preamble.bit_depth
-@inline missings(v::Variant) = v.genotypes[1].preamble.missings
+@inline phased(v::Variant) = v.genotypes.preamble.phased
+@inline min_ploidy(v::Variant) = v.genotypes.preamble.min_ploidy
+@inline max_ploidy(v::Variant) = v.genotypes.preamble.max_ploidy
+@inline ploidy(v::Variant) = v.genotypes.preamble.ploidy
+@inline bit_depth(v::Variant) = v.genotypes.preamble.bit_depth
+@inline missings(v::Variant) = v.genotypes.preamble.missings
 
 # The below are valid after calling `minor_allele_dosage!()`
 @inline function minor_allele(v::Variant)
-    midx = v.genotypes[1].minor_idx[1]
+    midx = v.genotypes.minor_idx
     if midx == 0
         @error "`minor_allele_dosage!()` must be called before `minor_allele()`"
     else
-        v.alleles[v.genotypes[1].minor_idx[1]]
+        v.alleles[v.genotypes.minor_idx]
     end
 end
 
 @inline function major_allele(v::Variant)
-    midx = v.genotypes[1].minor_idx[1]
+    midx = v.genotypes.minor_idx
     if midx == 0
         @error "`minor_allele_dosage!()` must be called before `minor_allele()`"
     else
-        v.alleles[3 - v.genotypes[1].minor_idx[1]]
+        v.alleles[3 - midx]
     end
 end
 
@@ -100,6 +100,6 @@ end
 Destroy any parsed genotype information.
 """
 function clear!(v::Variant)
-    resize!(v.genotypes, 0)
+    v.genotypes = nothing
     return
 end

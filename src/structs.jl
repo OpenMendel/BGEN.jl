@@ -31,15 +31,17 @@ struct Preamble
     missings::Vector{Int}
 end
 
-struct Genotypes{T}
+mutable struct Genotypes{T}
     preamble::Preamble # Once parsed, it will not be destroyed unless Genotypes is destroyed
-    decompressed::Vector{UInt8}
-    probs::Vector{T}
-    minor_idx::Vector{UInt8} # index of minor allele
-    dose::Vector{T}
+    decompressed::Union{Nothing,Vector{UInt8}}
+    probs::Union{Nothing, Vector{T}}
+    minor_idx::UInt8 # index of minor allele
+    dose::Union{Nothing, Vector{T}}
+    dose_mean_imputed::Bool
+    minor_allele_dosage::Bool
 end
 
-struct Variant
+mutable struct Variant
     offset::UInt64
     geno_offset::UInt64 # to the start of genotype block
     next_var_offset::UInt64
@@ -52,7 +54,7 @@ struct Variant
     n_alleles::UInt16
     alleles::Vector{String}
     # length-1 for parsed one, empty array for not parsed yet or destroyed,
-    genotypes::Vector{Genotypes}
+    genotypes::Union{Nothing, Genotypes}
 end
 
 struct Bgen

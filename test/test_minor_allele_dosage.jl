@@ -12,7 +12,7 @@
 
         dose_correct = sum(a1[.!isnan.(a1)]) < sum(a2[.!isnan.(a2)]) ? a1 : a2
         minor_allele_index = sum(a1[.!isnan.(a1)]) < sum(a2[.!isnan.(a2)]) ? 1 : 2
-        @test v.genotypes[1].minor_idx[1] == minor_allele_index
+        @test v.genotypes.minor_idx == minor_allele_index
         @test all(isapprox.(dose, dose_correct; atol=2e-7, nans=true))
     end
 end
@@ -29,7 +29,7 @@ end
 
         dose_correct = sum(a1[.!isnan.(a1)]) < sum(a2[.!isnan.(a2)]) ? a1 : a2
         minor_allele_index = sum(a1[.!isnan.(a1)]) < sum(a2[.!isnan.(a2)]) ? 1 : 2
-        @test v.genotypes[1].minor_idx[1] == minor_allele_index
+        @test v.genotypes.minor_idx == minor_allele_index
         @test all(isapprox.(dose, dose_correct; atol=2e-7, nans=true))
     end
 end
@@ -46,7 +46,7 @@ end
 
         dose_correct = sum(a1[.!isnan.(a1)]) < sum(a2[.!isnan.(a2)]) ? a1 : a2
         minor_allele_index = sum(a1[.!isnan.(a1)]) < sum(a2[.!isnan.(a2)]) ? 1 : 2
-        @test v.genotypes[1].minor_idx[1] == minor_allele_index
+        @test v.genotypes.minor_idx == minor_allele_index
         @test all(isapprox.(dose, dose_correct; atol=7e-5, nans=true))
     end
 end
