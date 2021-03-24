@@ -509,7 +509,7 @@ end
 
 function ref_allele_dosage!(b::Bgen, v::Variant;
         T=Float32, mean_impute=false, clear_decompressed=false, 
-        data=nothing, decompressed=nothing)
+        data=nothing, decompressed=nothing, is_decompressed=false)
     io, h = b.io, b.header
     # just return it if already computed
     if v.genotypes !== nothing && v.genotypes.dose !== nothing
@@ -583,7 +583,7 @@ The result is stored inside `v.genotypes.dose`, which can be cleared using
 """
 function minor_allele_dosage!(b::Bgen, v::Variant;
         T=Float32, mean_impute=false, clear_decompressed=false, 
-        data=nothing, decompressed=nothing)
+        data=nothing, decompressed=nothing, is_decompressed=false)
     # just return it if already computed
     io, h = b.io, b.header
     if v.genotypes !== nothing && v.genotypes.dose !== nothing
@@ -600,7 +600,8 @@ function minor_allele_dosage!(b::Bgen, v::Variant;
         return v.genotypes.dose
     end
     ref_allele_dosage!(b, v; T=T, mean_impute=mean_impute, 
-        clear_decompressed=clear_decompressed, data=data, decompressed=decompressed)
+        clear_decompressed=clear_decompressed, data=data, decompressed=decompressed,
+        is_decompressed=is_decompressed)
     genotypes = v.genotypes
     if data === nothing
         data = genotypes.dose

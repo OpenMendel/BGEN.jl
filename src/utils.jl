@@ -4,12 +4,12 @@
         rmask::Union{Nothing, Vector{UInt16}})
 Hardy-Weinberg equilibrium test for diploid biallelic case
 """
-function hwe(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8, 
+function hwe(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8, 
     rmask::Union{Nothing, Vector{UInt16}})
     @assert layout == 2 "hwe only supported for layout 2"
     @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy 
     @assert length(p.missings) == 0 "current implementation does not allow missingness"
-    idx1 = idx[1]
+    idx1 = startidx
 
     # "counts" times 255.
     n00 = 0
@@ -84,12 +84,12 @@ end
         rmask::Union{Nothing, Vector{UInt16}})
 Minor-allele frequency for diploid biallelic case
 """
-function maf(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8, 
+function maf(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8, 
     rmask::Union{Nothing, Vector{UInt16}})
     @assert layout == 2 "maf only supported for layout 2"
     @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy 
     @assert length(p.missings) == 0 "current implementation does not allow missingness"
-    idx1 = idx[1]
+    idx1 = startidx
     # "counts" times 255.
     dosage_total = 0
     if p.n_samples >= 16
@@ -131,12 +131,12 @@ end
         rmask::Union{Nothing, Vector{UInt16}})
 Information score of the variant.
 """
-function info_score(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8, 
+function info_score(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8, 
     rmask::Union{Nothing, Vector{UInt16}})
     @assert layout == 2 "info_score only supported for layout 2"
     @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy 
     @assert length(p.missings) == 0 "current implementation does not allow missingness"
-    idx1 = idx[1]
+    idx1 = startidx
     # "counts" times 255.
     samples_cum = 0
     mean_cum = 0.0
@@ -204,13 +204,13 @@ function info_score(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layou
     v / (2p * (1-p))
 end
 
-function counts!(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8, 
+function counts!(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8, 
     rmask::Union{Nothing, Vector{UInt16}}; r::Union{Nothing,Vector{<:Integer}}=nothing, dosage::Bool=true)
     if dosage
         @assert layout == 2 "hwe only supported for layout 2"
         @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy 
         @assert length(p.missings) == 0 "current implementation does not allow missingness"
-        idx1 = idx[1]
+        idx1 = startidx
         if r !== nothing
             @assert length(r) == 512 
             fill!(r, 0)
@@ -255,25 +255,28 @@ end
 
 for ftn in [:maf, :hwe, :info_score, :counts!]
     @eval begin
-        function $(ftn)(b::Bgen, v::Variant; T=Float32, decompressed=nothing, rmask=nothing, kwargs...)
+        function $(ftn)(b::Bgen, v::Variant; T=Float32, decompressed=nothing, 
+            is_decompressed=false, rmask=nothing, kwargs...)
             io, h = b.io, b.header
-            if length(v.genotypes) == 0 || length(v.genotypes[1].decompressed) == 0
+            if (decompressed !== nothing && !is_decompressed) || 
+                (decompressed === nothing && (v.genotypes === nothing || 
+                v.genotypes.decompressed === nothing))
                 decompressed = decompress(io, v, h; decompressed=decompressed)
             else
-                decompressed = v.genotypes[1].decompressed
+                decompressed = v.genotypes.decompressed
             end
-            idx = [1]
-            if length(v.genotypes) == 0
-                p = parse_preamble!(decompressed, idx, h, v)
-                push!(v.genotypes, Genotypes{T}(p, decompressed))
+            startidx = 1
+            if v.genotypes === nothing
+                p = parse_preamble(decompressed, h, v)
+                v.genotypes = Genotypes{T}(p, decompressed)
             else
-                p = v.genotypes[1].preamble
-                if h.layout == 2
-                    idx[1] += 10 + h.n_samples
-                end
+                p = v.genotypes.preamble
+            end
+            if h.layout == 2
+                startidx += 10 + h.n_samples
             end
 
-            $(ftn)(p, decompressed, idx, h.layout, rmask; kwargs...)
+            $(ftn)(p, decompressed, startidx, h.layout, rmask; kwargs...)
         end
     end
 end
