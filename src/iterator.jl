@@ -53,12 +53,13 @@ end
     size(vi, offsets)
 end
 
-struct Filter{F,I}
+struct Filter{I, T} <: VariantIterator
     itr::I
     min_maf::AbstractFloat
     min_hwe_pval::AbstractFloat
+    min_info_score::AbstractFloat
     min_success_rate_per_variant::AbstractFloat
-    rmask::BitVector
+    rmask::Union{Nothing,BitVector}
     cmask::Union{Nothing,BitVector}
     decompressed::Union{Nothing, Vector{UInt8}}
 end
@@ -69,53 +70,62 @@ end
 "Filtered" iterator for variants based on min_maf, min_hwe_pval, min_success_rate_per_variant, 
 cmask, and rmask.
 """
-filter(itr::VariantIterator; 
-    min_maf=NaN, min_hwe_pval=NaN, min_success_rate_per_variant=NaN, 
+filter(itr::VariantIterator;
+    T=Float32,
+    min_maf=NaN, min_hwe_pval=NaN, min_info_score=NaN,
+    min_success_rate_per_variant=NaN, 
     cmask = trues(n_variants(itr.b)), 
     rmask = nothing,
     decompressed = nothing) = 
-    Filter(itr, min_maf, min_hwe_pval, min_success_rate_per_variant, 
-        cmask, rmask, decompressed)
+    Filter{typeof(itr), T}(itr, min_maf, min_hwe_pval, min_info_score, min_success_rate_per_variant, 
+        rmask, cmask, decompressed)
 
-function iterate(f::Filter, state...)
-    y = iterate(f.itr, state...)
+function Base.iterate(f::Filter{I,T}, state...) where {I,T}
+    io, h = f.itr.b.io, f.itr.b.header
+    y = Base.iterate(f.itr, state...)
     cnt = 1
     while y !== nothing
         v = y[1]
-        if length(v.genotypes) == 0 || length(v.genotypes[1].decompressed) == 0
-            decompressed = decompress(io, v, h; decompressed=f.decompressed)
-        else
-            decompressed = v.genotypes[1].decompressed
-        end
-        idx = [1]
-        if length(v.genotypes) == 0
-            p = parse_preamble!(decompressed, idx, h, v)
-            push!(v.genotypes, Genotypes{T}(p, decompressed))
-        else
-            p = v.genotypes[1].preamble
-            if h.layout == 2
-                idx[1] += 10 + h.n_samples
-            end
-        end
         passed = true
-        if !cmask[cnt]
+        if !f.cmask[cnt]
             passed = false
         end
+        if  passed && (v.genotypes === nothing || v.genotypes.decompressed === nothing)
+            decompressed = decompress(io, v, h; decompressed=f.decompressed)
+        elseif passed
+            decompressed = v.genotypes.decompressed
+        end
+        startidx = 1
+        if passed && v.genotypes === nothing
+            p = parse_preamble(decompressed, h, v)
+            v.genotypes = Genotypes{T}(p, decompressed)
+        elseif passed
+            p = v.genotypes.preamble
+        end
+        if passed && h.layout == 2
+            startidx += 10 + h.n_samples
+        end
+        if passed && !isnan(f.min_maf)
+            current_maf = maf(p, v.genotypes.decompressed, startidx, h.layout, f.rmask)
+            if current_maf < f.min_maf && passed
+                passed = false
+            end
+        end
         if passed && !isnan(f.min_hwe_pval) 
-            hwe_pval = hwe(p, d, idx, p.layout, rmask)
+            hwe_pval = hwe(p, v.genotypes.decompressed, startidx, h.layout, f.rmask)
             if hwe_pval < f.min_hwe_pval 
                 passed = false
             end
         end
-        if passed && !isnan(f.min_maf)
-            maf = maf(p, d, idx, p.layout, rmask)
-            if maf < f.min_maf && passed
+        if passed && !isnan(f.min_info_score)
+            current_info_score = info_score(p, v.genotypes.decompressed, startidx, h.layout, f.rmask)
+            if current_info_score < f.min_info_score && passed
                 passed = false
             end
         end
-        if passed && !isnan(min_success_rate_per_variant)
-            successes = length(intersect(p.missings, (1:n_samples(f.itr.b)[rmask])))
-            success_rate = successes / count(rmask)
+        if passed && !isnan(f.min_success_rate_per_variant)
+            successes = length(intersect(p.missings, (1:n_samples(f.itr.b)[f.rmask])))
+            success_rate = successes / count(f.rmask)
             if success_rate < f.min_success_rate_per_variant && passed 
                 passed = false
             end
@@ -129,9 +139,9 @@ function iterate(f::Filter, state...)
     nothing
 end
 
-eltype(::Type{Filter{F,I}}) where {F,I} = Variant
-IteratorEltype(::Type{Filter{F,I}}) where {F,I} = IteratorEltype(I)
+eltype(::Type{Filter{I,T}}) where {I,T} = Variant
+IteratorEltype(::Type{Filter{I,T}}) where {I,T} = IteratorEltype(I)
 IteratorSize(::Type{<:Filter}) = SizeUnknown()
 
-reverse(f::Filter) = Filter(reverse(f.itr), min_maf, min_hwe_pval, 
-    min_success_rate_per_varinat, rmask, cmask, decompressed)
+reverse(f::Filter) = Filter(reverse(f.itr), f.min_maf, f.min_hwe_pval, 
+    f.min_info_score, f.min_success_rate_per_varinat, f.rmask, f.cmask, f.decompressed)
