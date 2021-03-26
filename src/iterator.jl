@@ -82,10 +82,15 @@ filter(itr::VariantIterator;
 
 function Base.iterate(f::Filter{I,T}, state...) where {I,T}
     io, h = f.itr.b.io, f.itr.b.header
-    y = Base.iterate(f.itr, state...)
-    cnt = 1
+    if state !== ()
+        y = Base.iterate(f.itr, state[1][2:end]...)
+        cnt = state[1][1]
+    else
+        y = Base.iterate(f.itr)
+        cnt = 1
+    end
     while y !== nothing
-        v = y[1]
+        v, s = y
         passed = true
         if !f.cmask[cnt]
             passed = false
@@ -129,12 +134,12 @@ function Base.iterate(f::Filter{I,T}, state...) where {I,T}
             if success_rate < f.min_success_rate_per_variant && passed 
                 passed = false
             end
-        end       
-        if passed
-            return y
-        end
-        y = iterate(f.itr, y[2])
+        end    
         cnt += 1
+        if passed
+            return v, (cnt, s...)
+        end
+        y = iterate(f.itr, s...)
     end
     nothing
 end
