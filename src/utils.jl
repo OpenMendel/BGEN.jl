@@ -234,8 +234,10 @@ function counts!(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8
                     s = s * rs
                 end
                 @inbounds for i in 1:16
-                    ss = s[i]
-                    r[ss + 1] += 1
+                    if rs[i] != 0
+                        ss = s[i]
+                        r[ss + 1] += 1
+                    end
                 end
             end
         end
