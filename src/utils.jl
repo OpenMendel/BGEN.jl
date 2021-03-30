@@ -248,6 +248,7 @@ function counts!(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8
                 r[2 * d[idx_base] + d[idx_base + 1]] += 1
             end
         end
+        # subtract back counts for missings
         @inbounds for n in p.missings
             rmask !== nothing && rmask[n] == 0 && continue
             idx_base = idx1 + ((n - 1) << 1)
