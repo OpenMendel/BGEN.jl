@@ -568,6 +568,7 @@ function ref_allele_dosage!(b::Bgen, v::Variant;
     if clear_decompressed
         clear_decompressed!(genotypes)
     end
+    return data
 end
 
 """

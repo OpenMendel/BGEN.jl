@@ -226,6 +226,7 @@ function counts!(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8
         else
             r = zeros(UInt, 512)
         end
+        rs = Vec{16,UInt16}((1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1))
         if p.n_samples >= 16
             @inbounds for n in 1:16:(p.n_samples - p.n_samples % 16)
                 idx_base = idx1 + ((n-1) >> 1) << 2
