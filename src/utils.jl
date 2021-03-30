@@ -209,7 +209,6 @@ function counts!(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8
     if dosage
         @assert layout == 2 "hwe only supported for layout 2"
         @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy 
-        @assert length(p.missings) == 0 "current implementation does not allow missingness"
         idx1 = startidx
         if r !== nothing
             @assert length(r) == 512 
@@ -249,6 +248,12 @@ function counts!(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8
                 r[2 * d[idx_base] + d[idx_base + 1]] += 1
             end
         end
+        @inbounds for n in p.missings
+            rmask !== nothing && rmask[n] == 0 && continue
+            idx_base = idx1 + ((n - 1) << 1)
+            r[2 * d[idx_base] + d[idx_base + 1]] -= 1
+        end
+        r[end] = length(p.missings)
     else
         @error "counts for non-dosage not implemented yet"
     end
