@@ -7,8 +7,7 @@ Hardy-Weinberg equilibrium test for diploid biallelic case
 function hwe(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8, 
     rmask::Union{Nothing, Vector{UInt16}})
     @assert layout == 2 "hwe only supported for layout 2"
-    @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy 
-    @assert length(p.missings) == 0 "current implementation does not allow missingness"
+    @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy
     idx1 = startidx
 
     # "counts" times 255.
@@ -47,6 +46,13 @@ function hwe(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8,
             n01 += d[idx_base + 1]
             n11 += 255 - d[idx_base] - d[idx_base + 1]
         end
+    end
+    @inbounds for n in p.missings
+        rmask !== nothing && rmask[n] == 0 && continue
+        idx_base = idx1 + ((n - 1) << 1)
+        n00 -= d[idx_base]
+        n01 -= d[idx_base + 1]
+        n11 -= 255 - d[idx_base] - d[idx_base + 1]
     end
     n00 *= one_255th
     n01 *= one_255th
@@ -88,7 +94,6 @@ function maf(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8,
     rmask::Union{Nothing, Vector{UInt16}})
     @assert layout == 2 "maf only supported for layout 2"
     @assert p.bit_depth == 8 && p.max_probs == 3 && p.max_ploidy == p.min_ploidy 
-    @assert length(p.missings) == 0 "current implementation does not allow missingness"
     idx1 = startidx
     # "counts" times 255.
     dosage_total = 0
@@ -120,8 +125,13 @@ function maf(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8,
             dosage_total += 2 * d[idx_base] + d[idx_base + 1]
         end
     end
+    @inbounds for n in p.missings
+        rmask !== nothing && rmask[n] == 0 && continue
+        idx_base = idx1 + ((n - 1) << 1)
+        dosage_total -= 2 * d[idx_base] + d[idx_base + 1]
+    end
     dosage_total *= one_255th
-    dosage_total /= (rmask !== nothing ? sum(rmask) : p.n_samples)
+    dosage_total /= (rmask !== nothing ? sum(rmask) : p.n_samples - length(p.missings))
     dosage_total < 1.0 ? dosage_total / 2 : 1 - dosage_total / 2
 end
 
@@ -245,14 +255,14 @@ function counts!(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8
             @inbounds for n in ((p.n_samples - rem) + 1) : p.n_samples
                 rmask !== nothing && rmask[n] == 0 && continue
                 idx_base = idx1 + ((n - 1) << 1)
-                r[2 * d[idx_base] + d[idx_base + 1]] += 1
+                r[2 * d[idx_base] + d[idx_base + 1] + 1] += 1
             end
         end
         # subtract back counts for missings
         @inbounds for n in p.missings
             rmask !== nothing && rmask[n] == 0 && continue
             idx_base = idx1 + ((n - 1) << 1)
-            r[2 * d[idx_base] + d[idx_base + 1]] -= 1
+            r[2 * d[idx_base] + d[idx_base + 1] + 1] -= 1
         end
         r[end] = length(p.missings)
     else
