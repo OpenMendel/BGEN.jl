@@ -80,21 +80,31 @@ function variant_by_pos(b::Bgen, pos::Integer)
     return Variant(b, offset)
 end
 
-function variant_by_index(idx::Index, index::Integer)
-    q = "SELECT file_start_position FROM Variant LIMIT 1 OFFSET ?"
-    params = (index - 1,)
+function variant_by_index(idx::Index, first::Integer, last::Union{Nothing, Integer}=nothing)
+    if last === nothing 
+        q = "SELECT file_start_position FROM Variant LIMIT 1 OFFSET ?"
+        params = (first - 1,)
+    else
+        q = "SELECT file_start_position FROM Variant LIMIT ? OFFSET ?"
+        params = (last - first + 1, first - 1)
+    end
     r = (DBInterface.execute(idx.db, q, params) |> columntable)[1]
-    return r[1]
+    return r
 end
 
 """
     variant_by_index(bgen, n)
 get the `n`-th variant (1-based).
 """
-function variant_by_index(b::Bgen, index::Integer)
+function variant_by_index(b::Bgen, first::Integer, last::Union{Nothing, Integer}=nothing)
     _check_idx(b)
-    offset = variant_by_index(b.idx, index)
-    return Variant(b, offset)
+    if last === nothing
+        offset = variant_by_index(b.idx, first)[1]
+        return Variant(b, offset)
+    else
+        offsets = variant_by_index(b.idx, first, last)
+        return VariantIteratorFromOffsets(b, offsets)
+    end
 end
 
 function offsets(idx::Index)
