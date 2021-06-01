@@ -50,7 +50,7 @@ function decompress(io::IOStream, v::Variant, h::Header;
     if compression == 0
         decompressed .= buffer_compressed
     else
-        if compression == 1 
+        if compression == 1
             codec = zlib
         elseif compression == 2
             codec = nothing
@@ -354,6 +354,38 @@ function ref_dosage_slow!(data::Vector{<:AbstractFloat}, p::Preamble,
 end
 
 """
+    ref_dosage_phased!(data, p, d, idx, layout)
+Dosage computation for phased genotypes.
+"""
+function ref_dosage_phased!(data::Vector{<:AbstractFloat}, p::Preamble,
+    d::Vector{UInt8}, startidx::Integer, layout::UInt8
+    )
+    @assert length(data) == p.n_samples
+    @assert layout == 2 "Phased genotypes not supported for Layout 1"
+    ploidy = p.max_ploidy
+    half_ploidy = ploidy / 2
+
+    maxval = 2 ^ p.bit_depth - 1
+    factor = 1.0 / maxval
+    probs_mask = 0xFFFFFFFFFFFFFFFF >> (64 - p.bit_depth)
+    bit_idx = 0
+    for n = 1:p.n_samples
+        if p.max_ploidy != p.min_ploidy
+            ploidy = ploidy[n]
+            half_ploidy = ploidy ÷ 2
+        end
+        ref_level = 0
+        for _ in 1:ploidy
+            j = startidx + bit_idx ÷ 8
+            ref_level += (unsafe_load_UInt64(d, j) >> (bit_idx % 8)) & probs_mask
+            bit_idx += p.bit_depth
+        end
+        data[n] = ref_level * factor
+    end
+    return data
+end
+
+"""
     alt_dosage(data, p)
 Switch ref allele dosage `data` to alt allele dosage.
 """
@@ -433,7 +465,7 @@ function _get_prob_matrix(d::Vector{T}, p::Preamble) where {T <: AbstractFloat}
                     first = (j-1) * p.max_probs + 1
                     last = j * p.max_probs
                     ragged[first:last, i] = reshaped[:, current]
-                    current += 1                    
+                    current += 1
                 end
             end
         else
@@ -464,8 +496,8 @@ The result is stored inside `v.genotypes.probs`, which can be cleared using
 function probabilities!(b::Bgen, v::Variant;
         T=Float32, clear_decompressed=false, data=nothing, decompressed=nothing, is_decompressed=false)
     io, h = b.io, b.header
-    if (decompressed !== nothing && !is_decompressed) || 
-        (decompressed === nothing && (v.genotypes === nothing || 
+    if (decompressed !== nothing && !is_decompressed) ||
+        (decompressed === nothing && (v.genotypes === nothing ||
         v.genotypes.decompressed === nothing))
         decompressed = decompress(io, v, h; decompressed=decompressed)
     else
@@ -489,7 +521,7 @@ function probabilities!(b::Bgen, v::Variant;
     if genotypes.probs !== nothing && length(genotypes.probs) >= data_size
         _get_prob_matrix(genotypes.probs, p)
     end
-    
+
     if data !== nothing
         @assert length(data) == data_size
         genotypes.probs = data
@@ -508,7 +540,7 @@ function probabilities!(b::Bgen, v::Variant;
 end
 
 function ref_allele_dosage!(b::Bgen, v::Variant;
-        T=Float32, mean_impute=false, clear_decompressed=false, 
+        T=Float32, mean_impute=false, clear_decompressed=false,
         data=nothing, decompressed=nothing, is_decompressed=false)
     io, h = b.io, b.header
     # just return it if already computed
@@ -525,8 +557,8 @@ function ref_allele_dosage!(b::Bgen, v::Variant;
         end
         return v.genotypes.dose
     end
-    if (decompressed !== nothing && !is_decompressed) || 
-        (decompressed === nothing && (v.genotypes === nothing || 
+    if (decompressed !== nothing && !is_decompressed) ||
+        (decompressed === nothing && (v.genotypes === nothing ||
         v.genotypes.decompressed === nothing))
         decompressed = decompress(io, v, h; decompressed=decompressed)
     else
@@ -543,8 +575,8 @@ function ref_allele_dosage!(b::Bgen, v::Variant;
         startidx += 10 + h.n_samples
     end
 
-    @assert p.phased == 0
     @assert p.n_alleles == 2 "allele dosages are available for biallelic variants"
+    #@assert p.phased == 0
 
     genotypes = v.genotypes
     if data !== nothing
@@ -553,13 +585,17 @@ function ref_allele_dosage!(b::Bgen, v::Variant;
         genotypes.dose = Vector{T}(undef, h.n_samples)
         data = genotypes.dose
     end
-    if p.max_ploidy == p.min_ploidy && p.max_probs == 3 && p.bit_depth == 8 &&
-            b.header.layout == 2
-        ref_dosage_fast!(data, p, decompressed, startidx, h.layout)
-    else
-        ref_dosage_slow!(data, p, decompressed, startidx, h.layout)
-    end
 
+    if p.phased == 0
+        if p.max_ploidy == p.min_ploidy && p.max_probs == 3 && p.bit_depth == 8 &&
+                b.header.layout == 2
+            ref_dosage_fast!(data, p, decompressed, startidx, h.layout)
+        else
+            ref_dosage_slow!(data, p, decompressed, startidx, h.layout)
+        end
+    else # phased
+        ref_dosage_phased!(data, p, decompressed, startidx, h.layout)
+    end
     genotypes.minor_idx = find_minor_allele(data, p)
     data[p.missings] .= NaN
     if mean_impute
@@ -583,7 +619,7 @@ The result is stored inside `v.genotypes.dose`, which can be cleared using
 - `clear_decompressed`: clears decompressed byte string after execution if set `true`
 """
 function minor_allele_dosage!(b::Bgen, v::Variant;
-        T=Float32, mean_impute=false, clear_decompressed=false, 
+        T=Float32, mean_impute=false, clear_decompressed=false,
         data=nothing, decompressed=nothing, is_decompressed=false)
     # just return it if already computed
     io, h = b.io, b.header
@@ -600,7 +636,7 @@ function minor_allele_dosage!(b::Bgen, v::Variant;
         end
         return v.genotypes.dose
     end
-    ref_allele_dosage!(b, v; T=T, mean_impute=mean_impute, 
+    ref_allele_dosage!(b, v; T=T, mean_impute=mean_impute,
         clear_decompressed=clear_decompressed, data=data, decompressed=decompressed,
         is_decompressed=is_decompressed)
     genotypes = v.genotypes
