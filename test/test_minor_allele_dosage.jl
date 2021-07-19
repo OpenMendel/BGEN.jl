@@ -16,6 +16,7 @@
         @test all(isapprox.(dose, dose_correct; atol=2e-7, nans=true))
     end
 end
+
 @testset "fast" begin
     path = BGEN.datadir("example.8bits.bgen")
     b = Bgen(path)
@@ -33,6 +34,7 @@ end
         @test all(isapprox.(dose, dose_correct; atol=2e-7, nans=true))
     end
 end
+
 @testset "v11" begin
     path = BGEN.datadir("example.v11.bgen")
     b = Bgen(path)
@@ -57,5 +59,16 @@ end
     v = first(iterator(b; from_bgen_start=true))
     m = minor_allele_dosage!(b, v; mean_impute=true)
     @test isapprox(m[1], 0.3958112303037447)
+end
+
+@testset "haplotypes" begin
+    path = BGEN.datadir("haplotypes.bgen")
+    b = Bgen(path)
+    for v in iterator(b)
+        probs = probabilities!(b, v)
+        dose = ref_allele_dosage!(b, v)
+        dose_correct = probs[1, :] .+ probs[3, :]
+        @test all(isapprox.(dose, dose_correct))
+    end
 end
 end
