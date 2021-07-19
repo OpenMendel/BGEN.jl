@@ -21,14 +21,7 @@ const zlib = ZlibDecompressor()
     @assert r == length(output) "zstd decompression returned data of wrong length"
 end
 
-"""
-    decompress(io, v, h; decompressed=nothing)
-Decompress the compressed byte string for genotypes.
-"""
-function decompress(io::IOStream, v::Variant, h::Header;
-    decompressed::Union{Nothing, AbstractVector{UInt8}}=nothing
-    )
-    compression = h.compression
+@inline function check_decompressed_length(io, v, h)
     seek(io, v.geno_offset)
     decompressed_field = 0
     if h.compression != 0
@@ -39,6 +32,19 @@ function decompress(io::IOStream, v::Variant, h::Header;
             decompressed_length = read(io, UInt32)
         end
     end
+    return decompressed_length, decompressed_field
+end
+
+"""
+    decompress(io, v, h; decompressed=nothing)
+Decompress the compressed byte string for genotypes.
+"""
+function decompress(io::IOStream, v::Variant, h::Header;
+    decompressed::Union{Nothing, AbstractVector{UInt8}}=nothing
+    )
+    compression = h.compression
+    seek(io, v.geno_offset)
+    decompressed_length, decompressed_field = check_decompressed_length(io, v, h)
     if decompressed !== nothing
         @assert length(decompressed) ==
             decompressed_length "decompressed length mismatch"
@@ -297,7 +303,7 @@ function ref_dosage_fast!(data::Vector{T}, p::Preamble,
             first  = (r & mask_odd) << 1
             dosage_level = first + second
             dosage_level_float = one_255th * convert(
-                Vec{16, Float32}, dosage_level)
+                Vec{16, T}, dosage_level)
             vstore(dosage_level_float, data, n)
         end
     end
