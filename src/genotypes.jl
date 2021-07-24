@@ -21,7 +21,7 @@ const zlib = ZlibDecompressor()
     @assert r == length(output) "zstd decompression returned data of wrong length"
 end
 
-function check_decompressed_length(io, v, h)
+@inline function check_decompressed_length(io, v, h)
     seek(io, v.geno_offset)
     decompressed_field = 0
     if h.compression != 0
