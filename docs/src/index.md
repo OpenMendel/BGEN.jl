@@ -59,11 +59,15 @@ This package requires Julia v1.0 or later, which can be obtained from
 https://julialang.org/downloads/ or by building Julia from the sources in the
 https://github.com/JuliaLang/julia repository.
 
-The package has not yet been registered and must be installed using the repository location. 
-It can be done with the following Julia code:
+The package can be installed by running the following code:
 ```julia
 using Pkg
-pkg"add https://github.com/OpenMendel/BGEN.jl"
+pkg"add BGEN"
+```
+
+In order to run the examples below, the `Glob` package is also needed. 
+```julia
+pkg"add Glob"
 ```
 
 
@@ -71,14 +75,14 @@ pkg"add https://github.com/OpenMendel/BGEN.jl"
 versioninfo()
 ```
 
-    Julia Version 1.5.2
-    Commit 539f3ce943 (2020-09-23 23:17 UTC)
+    Julia Version 1.6.2
+    Commit 1b93d53fc4 (2021-07-14 15:36 UTC)
     Platform Info:
-      OS: Linux (x86_64-pc-linux-gnu)
-      CPU: Intel(R) Xeon(R) Silver 4114 CPU @ 2.20GHz
+      OS: macOS (x86_64-apple-darwin18.7.0)
+      CPU: Intel(R) Core(TM) i7-7820HQ CPU @ 2.90GHz
       WORD_SIZE: 64
       LIBM: libopenlibm
-      LLVM: libLLVM-9.0.1 (ORCJIT, skylake-avx512)
+      LLVM: libLLVM-11.0.1 (ORCJIT, skylake)
 
 
 
@@ -98,33 +102,33 @@ Glob.glob("*", BGEN.datadir())
 
 
 
-    78-element Array{String,1}:
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.10bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.11bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.12bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.13bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.14bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.15bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.16bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.17bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.18bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.19bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.1bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.20bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.21bits.bgen"
+    78-element Vector{String}:
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.10bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.11bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.12bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.13bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.14bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.15bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.16bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.17bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.18bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.19bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.1bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.20bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.21bits.bgen"
      ⋮
-     "/home/kose/.julia/dev/BGEN/src/../data/example.6bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/example.7bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi"
-     "/home/kose/.julia/dev/BGEN/src/../data/example.9bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/example.gen"
-     "/home/kose/.julia/dev/BGEN/src/../data/example.sample"
-     "/home/kose/.julia/dev/BGEN/src/../data/example.v11.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/examples.16bits.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/haplotypes.bgen"
-     "/home/kose/.julia/dev/BGEN/src/../data/haplotypes.bgen.bgi"
-     "/home/kose/.julia/dev/BGEN/src/../data/haplotypes.haps"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/example.6bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/example.7bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/example.8bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/example.9bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/example.gen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/example.sample"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/example.v11.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/examples.16bits.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/haplotypes.bgen"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/haplotypes.bgen.bgi"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/haplotypes.haps"
 
 
 
@@ -144,11 +148,11 @@ Glob.glob("*.bgen.bgi", BGEN.datadir())
 
 
 
-    4-element Array{String,1}:
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.bgen.bgi"
-     "/home/kose/.julia/dev/BGEN/src/../data/example.16bits.bgen.bgi"
-     "/home/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi"
-     "/home/kose/.julia/dev/BGEN/src/../data/haplotypes.bgen.bgi"
+    4-element Vector{String}:
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.bgen.bgi"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/example.16bits.bgen.bgi"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/haplotypes.bgen.bgi"
 
 
 
@@ -162,9 +166,9 @@ Glob.glob("*.sample", BGEN.datadir())
 
 
 
-    2-element Array{String,1}:
-     "/home/kose/.julia/dev/BGEN/src/../data/complex.sample"
-     "/home/kose/.julia/dev/BGEN/src/../data/example.sample"
+    2-element Vector{String}:
+     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.sample"
+     "/Users/xyz/.julia/dev/BGEN/src/../data/example.sample"
 
 
 
@@ -181,7 +185,7 @@ b = Bgen(BGEN.datadir("example.8bits.bgen");
 
 
 
-    Bgen(IOStream(<file /home/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen>), 0x000000000001f6ea, BGEN.Header(0x0000178c, 0x00000014, 0x000000c7, 0x000001f4, 0x01, 0x02, true), ["sample_001", "sample_002", "sample_003", "sample_004", "sample_005", "sample_006", "sample_007", "sample_008", "sample_009", "sample_010"  …  "sample_491", "sample_492", "sample_493", "sample_494", "sample_495", "sample_496", "sample_497", "sample_498", "sample_499", "sample_500"], Index("/home/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi", SQLite.DB("/home/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi"), UInt32[], String[], String[], UInt32[]))
+    Bgen(IOStream(<file /Users/xyz/.julia/dev/BGEN/src/../data/example.8bits.bgen>), 0x000000000001f6ea, BGEN.Header(0x0000178c, 0x00000014, 0x000000c7, 0x000001f4, 0x01, 0x02, true), ["sample_001", "sample_002", "sample_003", "sample_004", "sample_005", "sample_006", "sample_007", "sample_008", "sample_009", "sample_010"  …  "sample_491", "sample_492", "sample_493", "sample_494", "sample_495", "sample_496", "sample_497", "sample_498", "sample_499", "sample_500"], Index("/Users/xyz/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi", SQLite.DB("/Users/xyz/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi"), UInt64[], String[], String[], UInt32[]))
 
 
 
@@ -204,7 +208,7 @@ io(b)
 
 
 
-    IOStream(<file /home/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen>)
+    IOStream(<file /Users/xyz/.julia/dev/BGEN/src/../data/example.8bits.bgen>)
 
 
 
@@ -228,7 +232,7 @@ samples(b)
 
 
 
-    500-element Array{String,1}:
+    500-element Vector{String}:
      "sample_001"
      "sample_002"
      "sample_003"
@@ -304,7 +308,7 @@ rsids(b)
 
 
 
-    199-element Array{String,1}:
+    199-element Vector{String}:
      "RSID_101"
      "RSID_2"
      "RSID_102"
@@ -342,7 +346,7 @@ chroms(b)
 
 
 
-    199-element Array{String,1}:
+    199-element Vector{String}:
      "01"
      "01"
      "01"
@@ -380,7 +384,7 @@ positions(b)
 
 
 
-    199-element Array{Int64,1}:
+    199-element Vector{Int64}:
        1001
        2000
        2001
@@ -875,7 +879,7 @@ first(select_region(b, "01"; start=5000))
 
 
 
-    Variant(0x0000000000001ef8, 0x0000000000001f21, 0x0000000000002169, 0x00000248, 0x000001f4, "SNPID_5", "RSID_5", "01", 0x00001388, 0x0002, ["A", "G"], Genotypes[])
+    Variant(0x0000000000001ef8, 0x0000000000001f21, 0x0000000000002169, 0x00000248, 0x000001f4, "SNPID_5", "RSID_5", "01", 0x00001388, 0x0002, ["A", "G"], nothing)
 
 
 
@@ -903,33 +907,33 @@ variants = parse_variants(b; from_bgen_start=true)
 
 
 
-    199-element Array{Variant,1}:
-     Variant(0x0000000000001790, 0x00000000000017b9, 0x0000000000001a82, 0x000002c9, 0x000001f4, "SNPID_2", "RSID_2", "01", 0x000007d0, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x0000000000001a82, 0x0000000000001aab, 0x0000000000001ced, 0x00000242, 0x000001f4, "SNPID_3", "RSID_3", "01", 0x00000bb8, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x0000000000001ced, 0x0000000000001d16, 0x0000000000001ef8, 0x000001e2, 0x000001f4, "SNPID_4", "RSID_4", "01", 0x00000fa0, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x0000000000001ef8, 0x0000000000001f21, 0x0000000000002169, 0x00000248, 0x000001f4, "SNPID_5", "RSID_5", "01", 0x00001388, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x0000000000002169, 0x0000000000002192, 0x0000000000002389, 0x000001f7, 0x000001f4, "SNPID_6", "RSID_6", "01", 0x00001770, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x0000000000002389, 0x00000000000023b2, 0x00000000000025df, 0x0000022d, 0x000001f4, "SNPID_7", "RSID_7", "01", 0x00001b58, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x00000000000025df, 0x0000000000002608, 0x00000000000027a4, 0x0000019c, 0x000001f4, "SNPID_8", "RSID_8", "01", 0x00001f40, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x00000000000027a4, 0x00000000000027cd, 0x00000000000029de, 0x00000211, 0x000001f4, "SNPID_9", "RSID_9", "01", 0x00002328, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x00000000000029de, 0x0000000000002a09, 0x0000000000002c43, 0x0000023a, 0x000001f4, "SNPID_10", "RSID_10", "01", 0x00002710, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x0000000000002c43, 0x0000000000002c6e, 0x0000000000002e8a, 0x0000021c, 0x000001f4, "SNPID_11", "RSID_11", "01", 0x00002af8, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x0000000000002e8a, 0x0000000000002eb5, 0x00000000000030e0, 0x0000022b, 0x000001f4, "SNPID_12", "RSID_12", "01", 0x00002ee0, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x00000000000030e0, 0x000000000000310b, 0x0000000000003375, 0x0000026a, 0x000001f4, "SNPID_13", "RSID_13", "01", 0x000032c8, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x0000000000003375, 0x00000000000033a0, 0x00000000000035dd, 0x0000023d, 0x000001f4, "SNPID_14", "RSID_14", "01", 0x000036b0, 0x0002, ["A", "G"], Genotypes[])
+    199-element Vector{Variant}:
+     Variant(0x0000000000001790, 0x00000000000017b9, 0x0000000000001a82, 0x000002c9, 0x000001f4, "SNPID_2", "RSID_2", "01", 0x000007d0, 0x0002, ["A", "G"], nothing)
+     Variant(0x0000000000001a82, 0x0000000000001aab, 0x0000000000001ced, 0x00000242, 0x000001f4, "SNPID_3", "RSID_3", "01", 0x00000bb8, 0x0002, ["A", "G"], nothing)
+     Variant(0x0000000000001ced, 0x0000000000001d16, 0x0000000000001ef8, 0x000001e2, 0x000001f4, "SNPID_4", "RSID_4", "01", 0x00000fa0, 0x0002, ["A", "G"], nothing)
+     Variant(0x0000000000001ef8, 0x0000000000001f21, 0x0000000000002169, 0x00000248, 0x000001f4, "SNPID_5", "RSID_5", "01", 0x00001388, 0x0002, ["A", "G"], nothing)
+     Variant(0x0000000000002169, 0x0000000000002192, 0x0000000000002389, 0x000001f7, 0x000001f4, "SNPID_6", "RSID_6", "01", 0x00001770, 0x0002, ["A", "G"], nothing)
+     Variant(0x0000000000002389, 0x00000000000023b2, 0x00000000000025df, 0x0000022d, 0x000001f4, "SNPID_7", "RSID_7", "01", 0x00001b58, 0x0002, ["A", "G"], nothing)
+     Variant(0x00000000000025df, 0x0000000000002608, 0x00000000000027a4, 0x0000019c, 0x000001f4, "SNPID_8", "RSID_8", "01", 0x00001f40, 0x0002, ["A", "G"], nothing)
+     Variant(0x00000000000027a4, 0x00000000000027cd, 0x00000000000029de, 0x00000211, 0x000001f4, "SNPID_9", "RSID_9", "01", 0x00002328, 0x0002, ["A", "G"], nothing)
+     Variant(0x00000000000029de, 0x0000000000002a09, 0x0000000000002c43, 0x0000023a, 0x000001f4, "SNPID_10", "RSID_10", "01", 0x00002710, 0x0002, ["A", "G"], nothing)
+     Variant(0x0000000000002c43, 0x0000000000002c6e, 0x0000000000002e8a, 0x0000021c, 0x000001f4, "SNPID_11", "RSID_11", "01", 0x00002af8, 0x0002, ["A", "G"], nothing)
+     Variant(0x0000000000002e8a, 0x0000000000002eb5, 0x00000000000030e0, 0x0000022b, 0x000001f4, "SNPID_12", "RSID_12", "01", 0x00002ee0, 0x0002, ["A", "G"], nothing)
+     Variant(0x00000000000030e0, 0x000000000000310b, 0x0000000000003375, 0x0000026a, 0x000001f4, "SNPID_13", "RSID_13", "01", 0x000032c8, 0x0002, ["A", "G"], nothing)
+     Variant(0x0000000000003375, 0x00000000000033a0, 0x00000000000035dd, 0x0000023d, 0x000001f4, "SNPID_14", "RSID_14", "01", 0x000036b0, 0x0002, ["A", "G"], nothing)
      ⋮
-     Variant(0x000000000001d991, 0x000000000001d9be, 0x000000000001dc12, 0x00000254, 0x000001f4, "SNPID_189", "RSID_189", "01", 0x00015ba9, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x000000000001dc12, 0x000000000001dc3f, 0x000000000001ddf2, 0x000001b3, 0x000001f4, "SNPID_190", "RSID_190", "01", 0x00015f91, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x000000000001ddf2, 0x000000000001de1f, 0x000000000001e011, 0x000001f2, 0x000001f4, "SNPID_191", "RSID_191", "01", 0x00016379, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x000000000001e011, 0x000000000001e03e, 0x000000000001e214, 0x000001d6, 0x000001f4, "SNPID_192", "RSID_192", "01", 0x00016761, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x000000000001e214, 0x000000000001e241, 0x000000000001e407, 0x000001c6, 0x000001f4, "SNPID_193", "RSID_193", "01", 0x00016b49, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x000000000001e407, 0x000000000001e434, 0x000000000001e6c9, 0x00000295, 0x000001f4, "SNPID_194", "RSID_194", "01", 0x00016f31, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x000000000001e6c9, 0x000000000001e6f6, 0x000000000001e8e1, 0x000001eb, 0x000001f4, "SNPID_195", "RSID_195", "01", 0x00017319, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x000000000001e8e1, 0x000000000001e90e, 0x000000000001ec86, 0x00000378, 0x000001f4, "SNPID_196", "RSID_196", "01", 0x00017701, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x000000000001ec86, 0x000000000001ecb3, 0x000000000001ef8b, 0x000002d8, 0x000001f4, "SNPID_197", "RSID_197", "01", 0x00017ae9, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x000000000001ef8b, 0x000000000001efb8, 0x000000000001f183, 0x000001cb, 0x000001f4, "SNPID_198", "RSID_198", "01", 0x00017ed1, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x000000000001f183, 0x000000000001f1b0, 0x000000000001f3d4, 0x00000224, 0x000001f4, "SNPID_199", "RSID_199", "01", 0x000182b9, 0x0002, ["A", "G"], Genotypes[])
-     Variant(0x000000000001f3d4, 0x000000000001f401, 0x000000000001f6ea, 0x000002e9, 0x000001f4, "SNPID_200", "RSID_200", "01", 0x000186a1, 0x0002, ["A", "G"], Genotypes[])
+     Variant(0x000000000001d991, 0x000000000001d9be, 0x000000000001dc12, 0x00000254, 0x000001f4, "SNPID_189", "RSID_189", "01", 0x00015ba9, 0x0002, ["A", "G"], nothing)
+     Variant(0x000000000001dc12, 0x000000000001dc3f, 0x000000000001ddf2, 0x000001b3, 0x000001f4, "SNPID_190", "RSID_190", "01", 0x00015f91, 0x0002, ["A", "G"], nothing)
+     Variant(0x000000000001ddf2, 0x000000000001de1f, 0x000000000001e011, 0x000001f2, 0x000001f4, "SNPID_191", "RSID_191", "01", 0x00016379, 0x0002, ["A", "G"], nothing)
+     Variant(0x000000000001e011, 0x000000000001e03e, 0x000000000001e214, 0x000001d6, 0x000001f4, "SNPID_192", "RSID_192", "01", 0x00016761, 0x0002, ["A", "G"], nothing)
+     Variant(0x000000000001e214, 0x000000000001e241, 0x000000000001e407, 0x000001c6, 0x000001f4, "SNPID_193", "RSID_193", "01", 0x00016b49, 0x0002, ["A", "G"], nothing)
+     Variant(0x000000000001e407, 0x000000000001e434, 0x000000000001e6c9, 0x00000295, 0x000001f4, "SNPID_194", "RSID_194", "01", 0x00016f31, 0x0002, ["A", "G"], nothing)
+     Variant(0x000000000001e6c9, 0x000000000001e6f6, 0x000000000001e8e1, 0x000001eb, 0x000001f4, "SNPID_195", "RSID_195", "01", 0x00017319, 0x0002, ["A", "G"], nothing)
+     Variant(0x000000000001e8e1, 0x000000000001e90e, 0x000000000001ec86, 0x00000378, 0x000001f4, "SNPID_196", "RSID_196", "01", 0x00017701, 0x0002, ["A", "G"], nothing)
+     Variant(0x000000000001ec86, 0x000000000001ecb3, 0x000000000001ef8b, 0x000002d8, 0x000001f4, "SNPID_197", "RSID_197", "01", 0x00017ae9, 0x0002, ["A", "G"], nothing)
+     Variant(0x000000000001ef8b, 0x000000000001efb8, 0x000000000001f183, 0x000001cb, 0x000001f4, "SNPID_198", "RSID_198", "01", 0x00017ed1, 0x0002, ["A", "G"], nothing)
+     Variant(0x000000000001f183, 0x000000000001f1b0, 0x000000000001f3d4, 0x00000224, 0x000001f4, "SNPID_199", "RSID_199", "01", 0x000182b9, 0x0002, ["A", "G"], nothing)
+     Variant(0x000000000001f3d4, 0x000000000001f401, 0x000000000001f6ea, 0x000002e9, 0x000001f4, "SNPID_200", "RSID_200", "01", 0x000186a1, 0x0002, ["A", "G"], nothing)
 
 
 
@@ -943,7 +947,7 @@ v = variant_by_rsid(b, "RSID_10")
 
 
 
-    Variant(0x00000000000029de, 0x0000000000002a09, 0x0000000000002c43, 0x0000023a, 0x000001f4, "SNPID_10", "RSID_10", "01", 0x00002710, 0x0002, ["A", "G"], Genotypes[])
+    Variant(0x00000000000029de, 0x0000000000002a09, 0x0000000000002c43, 0x0000023a, 0x000001f4, "SNPID_10", "RSID_10", "01", 0x00002710, 0x0002, ["A", "G"], nothing)
 
 
 
@@ -957,7 +961,7 @@ v = variant_by_index(b, 4)
 
 
 
-    Variant(0x0000000000001a82, 0x0000000000001aab, 0x0000000000001ced, 0x00000242, 0x000001f4, "SNPID_3", "RSID_3", "01", 0x00000bb8, 0x0002, ["A", "G"], Genotypes[])
+    Variant(0x0000000000001a82, 0x0000000000001aab, 0x0000000000001ced, 0x00000242, 0x000001f4, "SNPID_3", "RSID_3", "01", 0x00000bb8, 0x0002, ["A", "G"], nothing)
 
 
 
@@ -1003,7 +1007,7 @@ probabilities!(b, variants[1])
 
 
 
-    3×500 Array{Float64,2}:
+    3×500 Matrix{Float32}:
      NaN  0.027451    0.0156863  0.0235294  …  0.0156863  0.921569   0.00392157
      NaN  0.00784314  0.0509804  0.933333      0.027451   0.0509804  0.984314
      NaN  0.964706    0.933333   0.0431373     0.956863   0.027451   0.0117647
@@ -1020,7 +1024,7 @@ missings(variants[1])
 
 
 
-    1-element Array{Int64,1}:
+    1-element Vector{Int64}:
      1
 
 
@@ -1037,7 +1041,7 @@ p = probabilities!(b2, vs[3])
 
 
 
-    4×4 Array{Float64,2}:
+    4×4 Matrix{Float32}:
        1.0  0.0  1.0  1.0
        0.0  1.0  0.0  0.0
      NaN    0.0  1.0  0.0
@@ -1079,7 +1083,7 @@ ploidy(vs[3])
 
 
 
-    4-element Array{UInt8,1}:
+    4-element Vector{UInt8}:
      0x01
      0x02
      0x02
@@ -1095,7 +1099,7 @@ alleles(vs[3])
 
 
 
-    2-element Array{String,1}:
+    2-element Vector{String}:
      "A"
      "G"
 
@@ -1111,33 +1115,33 @@ minor_allele_dosage!(b, variants[1])
 
 
 
-    500-element Array{Float64,1}:
+    500-element Vector{Float32}:
      NaN
-       0.06274509803921569
-       0.08235294117647059
-       0.9803921568627451
-       0.09019607843137255
-       0.1411764705882353
-       1.0745098039215686
-       0.054901960784313725
-       0.10980392156862745
-       0.12156862745098039
-       0.1411764705882353
-       0.21568627450980393
-       0.08235294117647059
+       0.0627451
+       0.08235294
+       0.9803922
+       0.09019608
+       0.14117648
+       1.0745099
+       0.054901965
+       0.10980393
+       0.121568635
+       0.14117648
+       0.21568629
+       0.08235294
        ⋮
-       0.09411764705882353
-       0.10196078431372549
-       0.027450980392156862
-       0.9647058823529412
+       0.09411766
+       0.10196079
+       0.027450982
+       0.96470594
        0.0
-       1.011764705882353
-       0.043137254901960784
-       0.06274509803921569
-       1.0431372549019609
-       0.058823529411764705
-       1.8941176470588235
-       0.9921568627450981
+       1.0117648
+       0.043137256
+       0.0627451
+       1.0431373
+       0.05882353
+       1.8941176
+       0.99215686
 
 
 
@@ -1199,32 +1203,32 @@ minor_allele_dosage!(b, variants[1]; T=Float64, mean_impute=true)
 
 
 
-    500-element Array{Float64,1}:
-     0.3958112303037447
-     0.06274509803921569
-     0.08235294117647059
-     0.9803921568627451
-     0.09019607843137255
-     0.1411764705882353
-     1.0745098039215686
-     0.054901960784313725
-     0.10980392156862745
-     0.12156862745098039
-     0.1411764705882353
-     0.21568627450980393
-     0.08235294117647059
+    500-element Vector{Float32}:
+     0.39581063
+     0.0627451
+     0.08235294
+     0.9803922
+     0.09019608
+     0.14117648
+     1.0745099
+     0.054901965
+     0.10980393
+     0.121568635
+     0.14117648
+     0.21568629
+     0.08235294
      ⋮
-     0.09411764705882353
-     0.10196078431372549
-     0.027450980392156862
-     0.9647058823529412
+     0.09411766
+     0.10196079
+     0.027450982
+     0.96470594
      0.0
-     1.011764705882353
-     0.043137254901960784
-     0.06274509803921569
-     1.0431372549019609
-     0.058823529411764705
-     1.8941176470588235
-     0.9921568627450981
+     1.0117648
+     0.043137256
+     0.0627451
+     1.0431373
+     0.05882353
+     1.8941176
+     0.99215686
 
 
