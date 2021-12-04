@@ -50,7 +50,7 @@ end
 end
 
 @inline function Base.size(vi::VariantIteratorFromOffsets)
-    size(vi, offsets)
+    size(vi.offsets)
 end
 
 struct Filter{I, T} <: VariantIterator
