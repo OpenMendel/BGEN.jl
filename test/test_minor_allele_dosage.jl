@@ -66,7 +66,7 @@ end
     b = Bgen(path)
     for v in iterator(b)
         probs = probabilities!(b, v)
-        dose = ref_allele_dosage!(b, v)
+        dose = first_allele_dosage!(b, v)
         dose_correct = probs[1, :] .+ probs[3, :]
         @test all(isapprox.(dose, dose_correct))
     end

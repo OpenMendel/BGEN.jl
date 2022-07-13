@@ -279,7 +279,7 @@ function parse_layout2!(data::AbstractArray{<:AbstractFloat},
 end
 
 """
-    ref_dosage_fast!(data, p, d, idx, layout)
+    first_dosage_fast!(data, p, d, idx, layout)
 Dosage retrieval for 8-bit biallele case, no floating-point operations!
 """
 const one_255th = 1.0f0 / 255.0f0
@@ -287,7 +287,7 @@ const mask_odd = reinterpret(Vec{16, UInt16}, Vec{32, UInt8}(
     tuple(repeat([0xff, 0x00], 16)...)))
 const mask_even = reinterpret(Vec{16, UInt16}, Vec{32, UInt8}(
     tuple(repeat([0x00, 0xff], 16)...)))
-function ref_dosage_fast!(data::Vector{T}, p::Preamble,
+function first_dosage_fast!(data::Vector{T}, p::Preamble,
     d::Vector{UInt8}, startidx::Integer, layout::UInt8
     ) where {T <:AbstractFloat}
     @assert length(data) == p.n_samples
@@ -319,10 +319,10 @@ function ref_dosage_fast!(data::Vector{T}, p::Preamble,
 end
 
 """
-    ref_dosage_slow!(data, p, d, idx, layout)
+    first_dosage_slow!(data, p, d, idx, layout)
 Dosage computation for general case.
 """
-function ref_dosage_slow!(data::Vector{<:AbstractFloat}, p::Preamble,
+function first_dosage_slow!(data::Vector{<:AbstractFloat}, p::Preamble,
     d::Vector{UInt8}, startidx::Integer, layout::UInt8
     )
     @assert length(data) == p.n_samples
@@ -360,10 +360,10 @@ function ref_dosage_slow!(data::Vector{<:AbstractFloat}, p::Preamble,
 end
 
 """
-    ref_dosage_phased!(data, p, d, idx, layout)
+    first_dosage_phased!(data, p, d, idx, layout)
 Dosage computation for phased genotypes.
 """
-function ref_dosage_phased!(data::Vector{<:AbstractFloat}, p::Preamble,
+function first_dosage_phased!(data::Vector{<:AbstractFloat}, p::Preamble,
     d::Vector{UInt8}, startidx::Integer, layout::UInt8
     )
     @assert length(data) == p.n_samples
@@ -380,22 +380,22 @@ function ref_dosage_phased!(data::Vector{<:AbstractFloat}, p::Preamble,
             ploidy = ploidy[n]
             half_ploidy = ploidy ÷ 2
         end
-        ref_level = 0
+        first_level = 0
         for _ in 1:ploidy
             j = startidx + bit_idx ÷ 8
-            ref_level += (unsafe_load_UInt64(d, j) >> (bit_idx % 8)) & probs_mask
+            first_level += (unsafe_load_UInt64(d, j) >> (bit_idx % 8)) & probs_mask
             bit_idx += p.bit_depth
         end
-        data[n] = ref_level * factor
+        data[n] = first_level * factor
     end
     return data
 end
 
 """
-    alt_dosage(data, p)
-Switch ref allele dosage `data` to alt allele dosage.
+    second_dosage!(data, p)
+Switch first allele dosage `data` to second allele dosage.
 """
-function alt_dosage!(data::Vector{<:AbstractFloat}, p::Preamble)
+function second_dosage!(data::Vector{<:AbstractFloat}, p::Preamble)
     if p.n_samples >= 8
         @inbounds for n in 1:8:(p.n_samples - p.n_samples % 8)
             data[n]     = 2.0 - data[n]
@@ -415,7 +415,7 @@ end
 
 """
     find_minor_allele(data, p)
-Find minor allele index, returns 1 (ref) or 2 (alt)
+Find minor allele index, returns 1 (first) or 2 (second)
 """
 function find_minor_allele(data::Vector{<:AbstractFloat}, p::Preamble)
     batchsize = 100
@@ -545,7 +545,7 @@ function probabilities!(b::Bgen, v::Variant;
     return _get_prob_matrix(genotypes.probs, p)
 end
 
-function ref_allele_dosage!(b::Bgen, v::Variant;
+function first_allele_dosage!(b::Bgen, v::Variant;
         T=Float32, mean_impute=false, clear_decompressed=false,
         data=nothing, decompressed=nothing, is_decompressed=false)
     io, h = b.io, b.header
@@ -559,7 +559,7 @@ function ref_allele_dosage!(b::Bgen, v::Variant;
             genotypes.dose[p.missings] .= mean(filter(!isnan, genotypes.dose))
         end
         if genotypes.minor_allele_dosage && genotypes.minor_idx != 1
-            alt_dosage!(genotypes.dose, p)
+            second_dosage!(genotypes.dose, p)
         end
         return v.genotypes.dose
     end
@@ -595,12 +595,12 @@ function ref_allele_dosage!(b::Bgen, v::Variant;
     if p.phased == 0
         if p.max_ploidy == p.min_ploidy && p.max_probs == 3 && p.bit_depth == 8 &&
                 b.header.layout == 2
-            ref_dosage_fast!(data, p, decompressed, startidx, h.layout)
+            first_dosage_fast!(data, p, decompressed, startidx, h.layout)
         else
-            ref_dosage_slow!(data, p, decompressed, startidx, h.layout)
+            first_dosage_slow!(data, p, decompressed, startidx, h.layout)
         end
     else # phased
-        ref_dosage_phased!(data, p, decompressed, startidx, h.layout)
+        first_dosage_phased!(data, p, decompressed, startidx, h.layout)
     end
     genotypes.minor_idx = find_minor_allele(data, p)
     data[p.missings] .= NaN
@@ -612,6 +612,12 @@ function ref_allele_dosage!(b::Bgen, v::Variant;
     end
     return data
 end
+
+@deprecate ref_allele_dosage!(b::Bgen, v::Variant;
+        T=Float32, mean_impute=false, clear_decompressed=false,
+        data=nothing, decompressed=nothing, is_decompressed=false) first_allele_dosage!(b, v; 
+        T=T, mean_impute=mean_impute, clear_decompressed=clear_decompressed, 
+        data=data, decompressed=decompressed, is_decompressed=is_decompressed)
 
 """
     minor_allele_dosage!(b::Bgen, v::Variant; T=Float32,
@@ -638,11 +644,11 @@ function minor_allele_dosage!(b::Bgen, v::Variant;
             genotypes.dose[p.missings] .= mean(filter(!isnan, genotypes.dose))
         end
         if !genotypes.minor_allele_dosage && genotypes.minor_idx != 1
-            alt_dosage!(genotypes.dose, p)
+            second_dosage!(genotypes.dose, p)
         end
         return v.genotypes.dose
     end
-    ref_allele_dosage!(b, v; T=T, mean_impute=mean_impute,
+    first_allele_dosage!(b, v; T=T, mean_impute=mean_impute,
         clear_decompressed=clear_decompressed, data=data, decompressed=decompressed,
         is_decompressed=is_decompressed)
     genotypes = v.genotypes
@@ -650,7 +656,7 @@ function minor_allele_dosage!(b::Bgen, v::Variant;
         data = genotypes.dose
     end
     if genotypes.minor_idx != 1
-        alt_dosage!(data, genotypes.preamble)
+        second_dosage!(data, genotypes.preamble)
     end
     return data
 end

@@ -75,14 +75,14 @@ pkg"add Glob"
 versioninfo()
 ```
 
-    Julia Version 1.6.2
-    Commit 1b93d53fc4 (2021-07-14 15:36 UTC)
+    Julia Version 1.7.1
+    Commit ac5cc99908 (2021-12-22 19:35 UTC)
     Platform Info:
-      OS: macOS (x86_64-apple-darwin18.7.0)
+      OS: macOS (x86_64-apple-darwin19.5.0)
       CPU: Intel(R) Core(TM) i7-7820HQ CPU @ 2.90GHz
       WORD_SIZE: 64
       LIBM: libopenlibm
-      LLVM: libLLVM-11.0.1 (ORCJIT, skylake)
+      LLVM: libLLVM-12.0.1 (ORCJIT, skylake)
 
 
 
@@ -102,7 +102,8 @@ Glob.glob("*", BGEN.datadir())
 
 
 
-    78-element Vector{String}:
+    79-element Vector{String}:
+     "/Users/xyz/.julia/dev/BGEN/src/../data/LICENSE.md"
      "/Users/xyz/.julia/dev/BGEN/src/../data/complex.10bits.bgen"
      "/Users/xyz/.julia/dev/BGEN/src/../data/complex.11bits.bgen"
      "/Users/xyz/.julia/dev/BGEN/src/../data/complex.12bits.bgen"
@@ -115,7 +116,6 @@ Glob.glob("*", BGEN.datadir())
      "/Users/xyz/.julia/dev/BGEN/src/../data/complex.19bits.bgen"
      "/Users/xyz/.julia/dev/BGEN/src/../data/complex.1bits.bgen"
      "/Users/xyz/.julia/dev/BGEN/src/../data/complex.20bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.21bits.bgen"
      ⋮
      "/Users/xyz/.julia/dev/BGEN/src/../data/example.6bits.bgen"
      "/Users/xyz/.julia/dev/BGEN/src/../data/example.7bits.bgen"
@@ -969,6 +969,7 @@ v = variant_by_index(b, 4)
 
 The genotype information is decompressed and parsed when probability data is needed. The parsing is triggered by a call to one of:
 - `probabilities!(b::Bgen, v::Variant; T=Float64)` : probability of each genotype/haplotype.
+- `first_allele_dosage!(b::Bgen, v::Variant; T=Float64`) : dosage of the first allele for a biallelic variant. The first allele listed is often the alternative allele, but it depends on project-wise convention. For example, the first allele is the reference allele for the UK Biobank project. 
 - `minor_allele_dosage!(b::Bgen, v::Variant; T=Float64)` : minor allele dosage for a biallelic variant.
 
 Once parsed, the results are cached and loaded on any subsequent calls. 
@@ -1105,7 +1106,45 @@ alleles(vs[3])
 
 
 
-For biallelic nonphased genotype data, `minor_allele_dosage!(b, v)` can be computed. 
+For biallelic nonphased genotype data, `first_allele_dosage!(b, v)` and `minor_allele_dosage!(b, v)` can be computed. 
+
+
+```julia
+first_allele_dosage!(b, variants[1])
+```
+
+
+
+
+    500-element Vector{Float32}:
+     NaN
+       0.0627451
+       0.08235294
+       0.9803922
+       0.09019608
+       0.14117648
+       1.0745099
+       0.054901965
+       0.10980393
+       0.121568635
+       0.14117648
+       0.21568629
+       0.08235294
+       ⋮
+       0.09411766
+       0.10196079
+       0.027450982
+       0.96470594
+       0.0
+       1.0117648
+       0.043137256
+       0.0627451
+       1.0431373
+       0.05882353
+       1.8941176
+       0.99215686
+
+
 
 
 ```julia
@@ -1193,11 +1232,13 @@ major_allele(variants[1])
 
 
 
+`first_allele_dosage!()` and `minor_allele_dosage!()` support a keyword argument `mean_impute`, which imputes missing value with the mean of the non-missing values.
+
 `minor_allele_dosage!()` supports a keyword argument `mean_impute`, which imputes missing value with the mean of the non-missing values.
 
 
 ```julia
-minor_allele_dosage!(b, variants[1]; T=Float64, mean_impute=true)
+first_allele_dosage!(b, variants[1]; T=Float64, mean_impute=true)
 ```
 
 

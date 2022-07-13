@@ -4,7 +4,7 @@
         b = Bgen(path)
         for v in iterator(b)
             cnt = counts!(b, v)
-            dose = ref_allele_dosage!(b, v)
+            dose = first_allele_dosage!(b, v)
             correct_cnt = zeros(Int, 512)
             for v in dose
                 if !isnan(v)
