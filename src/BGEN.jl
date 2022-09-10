@@ -26,6 +26,7 @@ include("bgen_ftns.jl")
 include("genotypes.jl")
 include("index.jl")
 include("utils.jl")
+include("filter.jl")
 datadir(parts...) = joinpath(@__DIR__, "..", "data", parts...)
 
 end
