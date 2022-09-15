@@ -103,32 +103,32 @@ Glob.glob("*", BGEN.datadir())
 
 
     79-element Vector{String}:
-     "/Users/xyz/.julia/dev/BGEN/src/../data/LICENSE.md"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.10bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.11bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.12bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.13bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.14bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.15bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.16bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.17bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.18bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.19bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.1bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.20bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/LICENSE.md"
+     "/Users/kose/.julia/dev/BGEN/src/../data/complex.10bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/complex.11bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/complex.12bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/complex.13bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/complex.14bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/complex.15bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/complex.16bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/complex.17bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/complex.18bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/complex.19bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/complex.1bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/complex.20bits.bgen"
      ⋮
-     "/Users/xyz/.julia/dev/BGEN/src/../data/example.6bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/example.7bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/example.8bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/example.9bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/example.gen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/example.sample"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/example.v11.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/examples.16bits.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/haplotypes.bgen"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/haplotypes.bgen.bgi"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/haplotypes.haps"
+     "/Users/kose/.julia/dev/BGEN/src/../data/example.6bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/example.7bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi"
+     "/Users/kose/.julia/dev/BGEN/src/../data/example.9bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/example.gen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/example.sample"
+     "/Users/kose/.julia/dev/BGEN/src/../data/example.v11.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/examples.16bits.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/haplotypes.bgen"
+     "/Users/kose/.julia/dev/BGEN/src/../data/haplotypes.bgen.bgi"
+     "/Users/kose/.julia/dev/BGEN/src/../data/haplotypes.haps"
 
 
 
@@ -149,10 +149,10 @@ Glob.glob("*.bgen.bgi", BGEN.datadir())
 
 
     4-element Vector{String}:
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.bgen.bgi"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/example.16bits.bgen.bgi"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/haplotypes.bgen.bgi"
+     "/Users/kose/.julia/dev/BGEN/src/../data/complex.bgen.bgi"
+     "/Users/kose/.julia/dev/BGEN/src/../data/example.16bits.bgen.bgi"
+     "/Users/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi"
+     "/Users/kose/.julia/dev/BGEN/src/../data/haplotypes.bgen.bgi"
 
 
 
@@ -167,8 +167,8 @@ Glob.glob("*.sample", BGEN.datadir())
 
 
     2-element Vector{String}:
-     "/Users/xyz/.julia/dev/BGEN/src/../data/complex.sample"
-     "/Users/xyz/.julia/dev/BGEN/src/../data/example.sample"
+     "/Users/kose/.julia/dev/BGEN/src/../data/complex.sample"
+     "/Users/kose/.julia/dev/BGEN/src/../data/example.sample"
 
 
 
@@ -185,7 +185,7 @@ b = Bgen(BGEN.datadir("example.8bits.bgen");
 
 
 
-    Bgen(IOStream(<file /Users/xyz/.julia/dev/BGEN/src/../data/example.8bits.bgen>), 0x000000000001f6ea, BGEN.Header(0x0000178c, 0x00000014, 0x000000c7, 0x000001f4, 0x01, 0x02, true), ["sample_001", "sample_002", "sample_003", "sample_004", "sample_005", "sample_006", "sample_007", "sample_008", "sample_009", "sample_010"  …  "sample_491", "sample_492", "sample_493", "sample_494", "sample_495", "sample_496", "sample_497", "sample_498", "sample_499", "sample_500"], Index("/Users/xyz/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi", SQLite.DB("/Users/xyz/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi"), UInt64[], String[], String[], UInt32[]))
+    Bgen(IOStream(<file /Users/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen>), 0x000000000001f6ea, BGEN.Header(0x0000178c, 0x00000014, 0x000000c7, 0x000001f4, 0x01, 0x02, true), ["sample_001", "sample_002", "sample_003", "sample_004", "sample_005", "sample_006", "sample_007", "sample_008", "sample_009", "sample_010"  …  "sample_491", "sample_492", "sample_493", "sample_494", "sample_495", "sample_496", "sample_497", "sample_498", "sample_499", "sample_500"], Index("/Users/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi", SQLite.DB("/Users/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen.bgi"), UInt64[], String[], String[], UInt32[]))
 
 
 
@@ -208,7 +208,7 @@ io(b)
 
 
 
-    IOStream(<file /Users/xyz/.julia/dev/BGEN/src/../data/example.8bits.bgen>)
+    IOStream(<file /Users/kose/.julia/dev/BGEN/src/../data/example.8bits.bgen>)
 
 
 
@@ -1273,3 +1273,75 @@ first_allele_dosage!(b, variants[1]; T=Float64, mean_impute=true)
      0.99215686
 
 
+
+## Filtering
+
+Filtering based on `BitVector` for samples and variants is supported through `BGEN.filter` function if bit depth of each variant is a multiple of 8. The syntax is:
+```julia
+BGEN.filter(dest::AbstractString, b::Bgen, variant_mask::BitVector, 
+    sample_mask::BitVector=trues(length(b.samples));
+    dest_sample = dest[1:end-5] * ".sample",
+    sample_path=nothing, sample_names=b.samples,
+    offsets=nothing, from_bgen_start=false)
+```
+- `dest` is the output path of the resulting `.bgen` file. 
+- `b` is a `Bgen` instance. 
+- `variant_mask` is a `BitVector` for determining whether to include each variant in the output file.
+- `sample_mask` is a `BitVector` for determining whether to include each sample in the output file.
+- `dest_sample` is the location of the output `.sample` file. 
+- `sample_path` is the location of the `.sample` file of the input BGEN file. 
+- `sample_names` is the names of the sample in the input BGEN file. 
+- `offsets` and `from_bgen_start` are the arguments for the `iterator` method. 
+
+It only supports layout 2, and the output is always compressed in ZSTD. The sample names are stored in a separate .sample file, but not in the output .bgen file. 
+
+
+An example of choosing first 10 variants:
+
+
+```julia
+b = Bgen(BGEN.datadir("example.8bits.bgen"))
+vidx = falses(b.header.n_variants)
+vidx[1:10] .= true
+BGEN.filter("test.bgen", b, vidx)
+b2 = Bgen("test.bgen"; sample_path="test.sample")
+@assert all(b.samples .== b2.samples)
+for (v1, v2) in zip(iterator(b), iterator(b2)) # length of two iterators are different.
+    # it stops when the shorter one (b2) ends.
+    @assert v1.varid == v2.varid
+    @assert v1.rsid == v2.rsid
+    @assert v1.chrom == v2.chrom
+    @assert v1.pos == v2.pos
+    @assert v1.n_alleles == v2.n_alleles
+    @assert all(v1.alleles .== v2.alleles)
+    decompressed1 = BGEN.decompress(b.io, v1, b.header)
+    decompressed2 = BGEN.decompress(b2.io, v2, b2.header)
+    @assert all(decompressed1 .== decompressed2)
+end
+```
+
+An example of choosing last two samples out of four samples:
+
+
+```julia
+b3 = Bgen(BGEN.datadir("complex.24bits.bgen"))
+BGEN.filter("test2.bgen", b3, trues(b3.header.n_variants), BitVector([false, false, true, true]))
+b4 = Bgen("test2.bgen"; sample_path = "test2.sample")
+for (v3, v4) in zip(iterator(b3), iterator(b4))
+    @assert v3.varid == v4.varid
+    @assert v3.rsid == v4.rsid
+    @assert v3.chrom == v4.chrom
+    @assert v3.pos == v4.pos
+    @assert v3.n_alleles == v4.n_alleles
+    @assert all(v3.alleles .== v4.alleles)
+    @assert isapprox(probabilities!(b3, v3)[:, 3:4], probabilities!(b4, v4); nans=true)
+end
+```
+
+
+```julia
+rm("test.bgen", force=true)
+rm("test.sample", force=true)
+rm("test2.bgen", force=true)
+rm("test2.sample", force=true)
+```

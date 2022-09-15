@@ -11,7 +11,8 @@ is saved in the new bgen file `dest`. Sample information is stored in `dest_samp
 `offsets` and `from_bgen_start` are arguments for the `iterator` function of `b`.
 
 Only supports layout 2 and probibility bit depths should always be a multiple of 8. 
-The output is always compressed in ZSTD.
+The output is always compressed in ZSTD. The sample names are stored in a separate .sample file, 
+but not in the output .bgen file. 
 """
 function filter(dest::AbstractString, b::Bgen, variant_mask::BitVector, 
     sample_mask::BitVector=trues(length(b.samples));
