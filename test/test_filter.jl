@@ -44,6 +44,11 @@
         @test all(v4.alleles .== v5.alleles)
         @test isapprox(probabilities!(b4, v4)[:, 3:4], probabilities!(b5, v5); nans=true)
     end
+    close(b)
+    close(b2)
+    close(b3)
+    close(b4)
+    close(b5)
     rm("test.bgen", force=true)
     rm("test.sample", force=true)
     rm("test2.bgen", force=true)

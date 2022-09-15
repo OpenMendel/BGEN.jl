@@ -163,3 +163,7 @@ end
 function positions(vi::VariantIterator)
     collect(v.pos for v in vi)
 end
+
+@inline function close(b::Bgen)
+    close(b.io)
+end
