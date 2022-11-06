@@ -36,25 +36,58 @@ function select_region(b::Bgen, chrom::AbstractString;
     VariantIteratorFromOffsets(b, offsets)
 end
 
-function variant_by_rsid(idx::Index, rsid::AbstractString)
-    q = "SELECT file_start_position FROM Variant WHERE rsid= ?"
+function variant_by_rsid(idx::Index, rsid::AbstractString; allele1=nothing, allele2=nothing)
+    q = "SELECT file_start_position, allele1, allele2 FROM Variant WHERE rsid= ?"
     params = (rsid,)
-    r = (DBInterface.execute(idx.db, q, params) |> columntable)[1]
+    r = (DBInterface.execute(idx.db, q, params) |> columntable)#[1]
     if length(r) == 0
-        @error "variant with rsid $rsid not found"
-    elseif length(r) > 1
-        @error "multiple variant matches with $rsid"
+        error("variant with rsid $rsid not found")
     end
-    return r[1]
+    if allele1 === nothing && allele2 === nothing
+        if length(r[1]) > 1
+            error("multiple variant matches with $rsid. Try to specify allele1 and allele2.")
+        end
+        return r[1][1]
+    else
+        firstidx = nothing
+        lastidx = nothing
+        if allele1 !== nothing && allele2 === nothing
+            firstidx = findall(x -> x == allele1, r.allele1)
+            if length(firstidx) > 1
+                error("Nonunique match with $rsid, allele1: $allele1.")
+            elseif length(firstidx) == 0
+                error("No match with $rsid, allele1: $allele1.")
+            end
+            return r.file_start_position[firstidx[1]]
+        elseif allele2 !== nothing && allele1 === nothing
+            lastidx = findall(x -> x == allele2, r.allele2)
+            if length(lastidx) > 1
+                error("Nonunique match with $rsid, allele2: $allele2.")
+            elseif length(lastidx) == 0
+                error("No match with $rsid, allele2: $allele2.")        
+            end
+            return r.file_start_position[lastidx[1]]
+        else 
+            firstidx = findall(x -> x == allele1, r.allele1)
+            lastidx = findall(x -> x == allele2, r.allele2)
+            jointidx = intersect(firstidx, lastidx)
+            if length(jointidx) > 1
+                error("Nonunique match with $rsid, allele1: $allele1, allele2: $allele2.")
+            elseif length(jointidx) == 0
+                error("No match with $rsid, allele1: $allele1, allele2: $allele2.")
+            end
+            return r.file_start_position[jointidx[1]]
+        end
+    end
 end
 
 """
     variant_by_rsid(bgen, rsid)
 Find a variant by rsid
 """
-function variant_by_rsid(b::Bgen, rsid::AbstractString)
+function variant_by_rsid(b::Bgen, rsid::AbstractString; allele1=nothing, allele2=nothing)
     _check_idx(b)
-    offset = variant_by_rsid(b.idx, rsid)
+    offset = variant_by_rsid(b.idx, rsid; allele1=allele1, allele2=allele2)
     return Variant(b, offset)
 end
 
@@ -63,9 +96,9 @@ function variant_by_pos(idx::Index, pos::Integer)
     params = (pos,)
     r = (DBInterface.execute(idx.db, q, params) |> columntable)[1]
     if length(r) == 0
-        @error "variant match at $pos not found"
+        error("variant match at $pos not found")
     elseif length(r) > 1
-        @error "multiple variant matches at $pos"
+        error("multiple variant matches at $pos")
     end
     return r[1]
 end
