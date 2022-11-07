@@ -36,16 +36,21 @@ function select_region(b::Bgen, chrom::AbstractString;
     VariantIteratorFromOffsets(b, offsets)
 end
 
-function variant_by_rsid(idx::Index, rsid::AbstractString; allele1=nothing, allele2=nothing)
+function variant_by_rsid(idx::Index, rsid::AbstractString; allele1=nothing, allele2=nothing, allow_multiple=false)
     q = "SELECT file_start_position, allele1, allele2 FROM Variant WHERE rsid= ?"
     params = (rsid,)
     r = (DBInterface.execute(idx.db, q, params) |> columntable)#[1]
     if length(r) == 0
         error("variant with rsid $rsid not found")
     end
+    if allow_multiple
+        return r[1]
+    end
     if allele1 === nothing && allele2 === nothing
         if length(r[1]) > 1
-            error("multiple variant matches with $rsid. Try to specify allele1 and allele2.")
+            if !allow_multiple 
+                error("multiple variant matches with $rsid. Try to specify allele1 and allele2, or set allow_multiple=true.")
+            end
         end
         return r[1][1]
     else
@@ -85,9 +90,21 @@ end
     variant_by_rsid(bgen, rsid)
 Find a variant by rsid
 """
-function variant_by_rsid(b::Bgen, rsid::AbstractString; allele1=nothing, allele2=nothing)
+function variant_by_rsid(b::Bgen, rsid::AbstractString; allele1=nothing, allele2=nothing, varid=nothing)
+    @assert !(varid !== nothing && (allele1 !== nothing || allele2 !== nothing)) "either define varid or alleles"
     _check_idx(b)
-    offset = variant_by_rsid(b.idx, rsid; allele1=allele1, allele2=allele2)
+    offset = variant_by_rsid(b.idx, rsid; allele1=allele1, allele2=allele2, allow_multiple = varid !== nothing)
+    if varid !== nothing
+        vs = map(x -> Variant(b, x), offset)
+        v_idxs = findall(x -> x.varid == varid, vs)
+        if length(v_idxs) > 1
+            error("Multiple matches.")
+        elseif length(v_idxs) == 0
+            error("no matches.")
+        else
+            return vs[v_idxs[1]]
+        end
+    end
     return Variant(b, offset)
 end
 
