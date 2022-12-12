@@ -21,7 +21,7 @@ function get_samples(path::String, n_samples::Integer)
     readline(io) # header
     readline(io) # types
     samples = readlines(io)
-    samples = map(x -> split(x, " ")[2], samples)
+    samples = map(x -> split(x, " ")[1], samples)
     @assert length(samples) == n_samples "Inconsistent number of samples"
     close(io)
     samples
