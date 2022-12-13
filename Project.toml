@@ -1,7 +1,7 @@
 name = "BGEN"
 uuid = "6db4b851-9beb-4b83-9d64-eb1cfb37721d"
 authors = ["Seyoon Ko <kos@ucla.edu> and contributors"]
-version = "0.1.10"
+version = "0.1.11"
 
 [deps]
 CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
