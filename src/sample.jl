@@ -18,10 +18,11 @@ end
 function get_samples(path::String, n_samples::Integer)
     @assert endswith(path, ".sample") "Extension of the file should be .sample"
     io = open(path)
-    readline(io) # header
+    keys = split(readline(io)) # header
+    key_idx = ("ID_1" in keys && "ID_2" in keys) ? 2 : 1
     readline(io) # types
     samples = readlines(io)
-    samples = map(x -> split(x, " ")[1], samples)
+    samples = map(x -> split(x, " ")[key_idx], samples)
     @assert length(samples) == n_samples "Inconsistent number of samples"
     close(io)
     samples

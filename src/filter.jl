@@ -18,7 +18,7 @@ function filter(dest::AbstractString, b::Bgen, variant_mask::BitVector,
     sample_mask::BitVector=trues(length(b.samples));
     dest_sample = dest[1:end-5] * ".sample",
     sample_path=nothing, sample_names=b.samples,
-    offsets=nothing, from_bgen_start=false)
+    offsets=nothing, from_bgen_start=false, use_zlib=false)
 
     @assert endswith(dest, ".bgen") "must use .bgen file"
     @assert b.header.layout == 2 "only layout 2 is supported."
@@ -31,19 +31,23 @@ function filter(dest::AbstractString, b::Bgen, variant_mask::BitVector,
         write(io, UInt32(sum(variant_mask))) # number of variants
         write(io, UInt32(sum(sample_mask))) # number of samples
         write(io, Vector{UInt8}("bgen")) # magic number
-        flag = 0x0000000a # zstd, layout 2, do not store sample info
+        if !use_zlib
+            flag = 0x0000000a # zstd, layout 2, do not store sample info
+        else
+            flag = 0x00000009 # zlib, layout 2, do not store sample info
+        end
         write(io, flag)
         v_it = iterator(b; offsets=offsets, from_bgen_start=from_bgen_start)
         for (i, v) in enumerate(v_it)
             if variant_mask[i]
-                write_variant(io, b, v, sample_mask)
+                write_variant(io, b, v, sample_mask; use_zlib=use_zlib)
             end
         end
 
     end
 end
 
-function write_variant(io::IOStream, b::Bgen, v::Variant, sample_mask::BitVector)
+function write_variant(io::IOStream, b::Bgen, v::Variant, sample_mask::BitVector; use_zlib=false)
     write(io, UInt16(length(v.varid)))  # length of varid
     write(io, v.varid)                  # varid
     write(io, UInt16(length(v.rsid)))   # length of rsid
@@ -96,7 +100,11 @@ function write_variant(io::IOStream, b::Bgen, v::Variant, sample_mask::BitVector
         end        
         decompressed = decompressed_new
     end
-    compressed = transcode(ZstdCompressor, decompressed)
+    if !use_zlib
+        compressed = transcode(ZstdCompressor(), decompressed)
+    else
+        compressed = transcode(ZlibCompressor(), decompressed)
+    end
     write(io, UInt32(length(compressed) + 4))
     write(io, UInt32(length(decompressed)))
     write(io, compressed)
