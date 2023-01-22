@@ -97,8 +97,9 @@ function write_variant(io::IOStream, b::Bgen, v::Variant, sample_mask::BitVector
                 offset_new += current_block_length
             end
             offset += current_block_length
-        end        
+        end
         decompressed = decompressed_new
+        @assert length(decompressed_new) == offset_new
     end
     if !use_zlib
         compressed = transcode(ZstdCompressor(), decompressed)
@@ -112,7 +113,8 @@ end
 
 function get_decompressed_length(p::Preamble, d::Vector{UInt8}, sample_mask::BitVector)
     cum_count = 10
-    cum_count += p.n_samples
+    n_samples_new = sum(sample_mask)
+    cum_count += n_samples_new
     base_bytes = p.bit_depth ÷ 8
     ploidy = d[9: 8 + p.n_samples]
     if p.phased == 1

@@ -16,7 +16,7 @@ const zlib = ZlibDecompressor()
 
 @inline function zstd_uncompress!(input::Vector{UInt8}, output::Vector{UInt8})
     r = ccall((:ZSTD_decompress, CodecZstd.libzstd),
-        Csize_t, (Ptr{Cchar}, Cint, Ptr{Cchar}, Cint),
+        Csize_t, (Ptr{Cchar}, Csize_t, Ptr{Cchar}, Csize_t),
         pointer(output), length(output), pointer(input), length(input))
     @assert r == length(output) "zstd decompression returned data of wrong length"
 end
