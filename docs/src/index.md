@@ -75,14 +75,15 @@ pkg"add Glob"
 versioninfo()
 ```
 
-    Julia Version 1.7.1
-    Commit ac5cc99908 (2021-12-22 19:35 UTC)
+    Julia Version 1.8.5
+    Commit 17cfb8e65ea (2023-01-08 06:45 UTC)
     Platform Info:
-      OS: macOS (x86_64-apple-darwin19.5.0)
-      CPU: Intel(R) Core(TM) i7-7820HQ CPU @ 2.90GHz
+      OS: macOS (arm64-apple-darwin21.5.0)
+      CPU: 8 × Apple M2
       WORD_SIZE: 64
       LIBM: libopenlibm
-      LLVM: libLLVM-12.0.1 (ORCJIT, skylake)
+      LLVM: libLLVM-13.0.1 (ORCJIT, apple-m1)
+      Threads: 1 on 4 virtual cores
 
 
 
@@ -1106,7 +1107,7 @@ alleles(vs[3])
 
 
 
-For biallelic nonphased genotype data, `first_allele_dosage!(b, v)` and `minor_allele_dosage!(b, v)` can be computed. 
+For biallelic genotype data, `first_allele_dosage!(b, v)` and `minor_allele_dosage!(b, v)` can be computed. It also supports phased data.
 
 
 ```julia
@@ -1234,11 +1235,9 @@ major_allele(variants[1])
 
 `first_allele_dosage!()` and `minor_allele_dosage!()` support a keyword argument `mean_impute`, which imputes missing value with the mean of the non-missing values.
 
-`minor_allele_dosage!()` supports a keyword argument `mean_impute`, which imputes missing value with the mean of the non-missing values.
-
 
 ```julia
-first_allele_dosage!(b, variants[1]; T=Float64, mean_impute=true)
+dose = first_allele_dosage!(b, variants[1]; T=Float64, mean_impute=true)
 ```
 
 
@@ -1271,6 +1270,85 @@ first_allele_dosage!(b, variants[1]; T=Float64, mean_impute=true)
      0.05882353
      1.8941176
      0.99215686
+
+
+
+The function `hardcall(d; threshold=0.1)` can be used to convert the dosage vectors to hard-called genotypes, returning a `Vector{UInt8}` array of values `0x00`, `0x01`, `0x02`, or `0x09` (for missing). The function `hardcall!(c, d; threshold=0.1)` can be used to fill in a preallocated integer array `c`. `threshold` determines the maximum distance between the hard genotypes and the dosage values. For example, if `threshold = 0.1`, dosage value in `[0, 0.1)` gives the hard call `0x00`, a value in `(0.9, 1,1)` gives `0x01`, and a value in `(1.9, 2.0]` gives `0x02`. Any other values give `0x09`. 
+
+
+```julia
+c = hardcall(dose; threshold=0.1)
+```
+
+
+
+
+    500-element Vector{UInt8}:
+     0x09
+     0x00
+     0x00
+     0x01
+     0x00
+     0x09
+     0x01
+     0x00
+     0x09
+     0x09
+     0x09
+     0x09
+     0x00
+        ⋮
+     0x00
+     0x09
+     0x00
+     0x01
+     0x00
+     0x01
+     0x00
+     0x00
+     0x01
+     0x00
+     0x09
+     0x01
+
+
+
+
+```julia
+calls = Vector{UInt8}(undef, length(dose))
+hardcall!(calls, dose; threshold = 0.1)
+```
+
+
+
+
+    500-element Vector{UInt8}:
+     0x09
+     0x00
+     0x00
+     0x01
+     0x00
+     0x09
+     0x01
+     0x00
+     0x09
+     0x09
+     0x09
+     0x09
+     0x00
+        ⋮
+     0x00
+     0x09
+     0x00
+     0x01
+     0x00
+     0x01
+     0x00
+     0x00
+     0x01
+     0x00
+     0x09
+     0x01
 
 
 

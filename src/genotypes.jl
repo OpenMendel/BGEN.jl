@@ -682,3 +682,31 @@ function clear_decompressed!(g::Genotypes)
     g.decompressed = nothing
     return
 end
+
+"""
+    hardcall!(c::AbstractArray{I}, d::AbstractArray{T}; threshold=0.1) where {I, T}
+Hard genotype calls for dosages. `d` is the dosage vector, and `c` is filled with the hard called genotypes 
+with values 0, 1, 2, or 9 (for missing). `threshold` determines maximum distance between the hardcall and the dosage.
+`threshold` must be in [0, 0.5). 
+"""
+function hardcall!(c::AbstractArray{I}, d::AbstractArray{T}; threshold=0.1) where {I <: Integer, T <: AbstractFloat}
+    @assert 0 <= threshold < 0.5
+    for i in eachindex(d)
+        c[i] = d[i] < threshold ? 0 : (
+            1 - threshold < d[i] < 1 + threshold ? 1 : (
+                d[i] > 2 - threshold ? 2 : 9
+            ))
+    end
+    c
+end
+
+"""
+    hardcall(d::AbstractArray{T}; threshold=0.1) where {I, T}
+Hard genotype calls for dosages. `d` is the dosage vector, the return UInt8 vector is filled with the hard called genotypes 
+with values 0, 1, 2, or 9 (for missing). `threshold` determines maximum distance between the hardcall and the dosage.
+`threshold` must be in [0, 0.5). 
+"""
+function hardcall(d::AbstractArray{T}; threshold=0.1) where T <: AbstractFloat
+    c = Vector{UInt8}(undef, length(d))
+    hardcall!(c, d; threshold=threshold)
+end
