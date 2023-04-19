@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>BGEN.jl Â· BGEN.jl</title><script data-outdated-warner src="assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.045/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.13.24/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href>BGEN.jl</a></span></div><form class="docs-search" action="search/"><input class="docs-search-query" id="documenter-search-query" name="q" type="text" placeholder="Search docs"/></form><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>BGEN.jl</a><ul class="internal"><li><a class="tocitem" href="#The-BGEN-Format"><span>The BGEN Format</span></a></li><li><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li><a class="tocitem" href="#Example-Data"><span>Example Data</span></a></li><li><a class="tocitem" href="#Type-Bgen"><span>Type <code>Bgen</code></span></a></li><li><a class="tocitem" href="#Variant-and-VariantIterator"><span><code>Variant</code> and <code>VariantIterator</code></span></a></li><li><a class="tocitem" href="#Genotype/haplotype-probabilities-and-minor-allele-dosage"><span>Genotype/haplotype probabilities and minor allele dosage</span></a></li><li><a class="tocitem" href="#Filtering"><span>Filtering</span></a></li></ul></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>BGEN.jl</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>BGEN.jl</a></li></ul></nav><div class="docs-right"><a class="docs-edit-link" href="https://github.com/OpenMendel/BGEN.jl/blob/main/docs/src/index.md" title="Edit on GitHub"><span class="docs-icon fab">ï‚›</span><span class="docs-label is-hidden-touch">Edit on GitHub</span></a><a class="docs-settings-button fas fa-cog" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-sidebar-button fa fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a></div></header><article class="content" id="documenter-page"><h1 id="BGEN.jl"><a class="docs-heading-anchor" href="#BGEN.jl">BGEN.jl</a><a id="BGEN.jl-1"></a><a class="docs-heading-anchor-permalink" href="#BGEN.jl" title="Permalink"></a></h1><p>Routines for reading compressed storage of genotyped or imputed markers</p><h2 id="The-BGEN-Format"><a class="docs-heading-anchor" href="#The-BGEN-Format">The BGEN Format</a><a id="The-BGEN-Format-1"></a><a class="docs-heading-anchor-permalink" href="#The-BGEN-Format" title="Permalink"></a></h2><p><a href="https://en.wikipedia.org/wiki/Genome-wide_association_study"><em>Genome-wide association studies (GWAS)</em></a> data with imputed markers are often saved in the <a href="https://www.well.ox.ac.uk/~gav/bgen_format/"><strong>BGEN format</strong></a> or <code>.bgen</code> file.</p><p>Used in:</p><ul><li>Wellcome Trust Case-Control Consortium 2</li><li>the MalariaGEN project</li><li>the ALSPAC study</li><li><a href="https://enkre.net/cgi-bin/code/bgen/wiki/?name=BGEN+in+the+UK+Biobank"><strong>UK Biobank</strong></a>: for genome-wide imputed genotypes and phased haplotypes</li></ul><h3 id="Features"><a class="docs-heading-anchor" href="#Features">Features</a><a id="Features-1"></a><a class="docs-heading-anchor-permalink" href="#Features" title="Permalink"></a></h3><ul><li>Can store both hard-calls and imputed data</li><li>Can store both phased haplotypes and phased genotypes</li><li>Efficient variable-precision bit reapresntations</li><li>Per-variant compression <span>$\rightarrow$</span> easy to index <ul><li>Supported compression method: <a href="http://www.zlib.net/">zlib</a> and <a href="https://facebook.github.io/zstd/">Zstandard</a>. </li><li>Index files are often provided as <code>.bgen.bgi</code> files, which are plain <a href="http://www.sqlite.org">SQLite3</a> databases.</li></ul></li></ul><p>Time to list variant identifying information (genomic location, ID and alleles): 18,496 samples, 121,668 SNPs (image source: https://www.well.ox.ac.uk/~gav/bgen<em>format/images/bgen</em>comparison.png) <img src="https://www.well.ox.ac.uk/~gav/bgen_format/images/bgen_comparison.png" alt/></p><p><em>Plink 1 format (<code>.bed</code>/<code>.bim</code>/<code>.fam</code>) has the list of variants as a separate file (<code>.bim</code>), effectively zero time.</em></p><h3 id="Structure"><a class="docs-heading-anchor" href="#Structure">Structure</a><a id="Structure-1"></a><a class="docs-heading-anchor-permalink" href="#Structure" title="Permalink"></a></h3><p>A header block followed by a series of [variant data block - (compressed) genotype data block] pairs.</p><ul><li>Header block <ul><li>number of variants and samples</li><li>compression method (none, zlib or zstandard)</li><li>version of layout <ul><li>Only &quot;layout 2&quot; is discussed below. &quot;Layout 1&quot; is also supported.</li></ul></li><li>sample identifiers (optional)</li></ul></li></ul><ul><li>Variant data block<ul><li>variant id</li><li>genomic position (chromosome, bp coordinate)</li><li>list of alleles</li></ul></li><li>Genotype data block (often compressed)<ul><li>ploidy of each sample (may vary sample-by-sample)</li><li>if the genotype data are phased</li><li>precision (<span>$B$</span>, number of bits to represent probabilities)</li><li>probabilitiy data (e.g. an unsigned <span>$B$</span>-bit integer <span>$x$</span> represents the probability of (<span>$\frac{x}{2^{B}-1}$</span>)</li></ul></li></ul><p><em><code>BGEN.jl</code> provides tools for iterating over the variants and parsing genotype data efficiently. It has been optimized for UK Biobank&#39;s zlib-compressed, 8-bit byte-aligned, all-diploid, all-biallelic datafiles.</em></p><h2 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h2><p>This package requires Julia v1.0 or later, which can be obtained from https://julialang.org/downloads/ or by building Julia from the sources in the https://github.com/JuliaLang/julia repository.</p><p>The package can be installed by running the following code:</p><pre><code class="language-julia hljs">using Pkg
-pkg&quot;add BGEN&quot;</code></pre><p>In order to run the examples below, the <code>Glob</code> package is also needed. </p><pre><code class="language-julia hljs">pkg&quot;add Glob&quot;</code></pre><pre><code class="language-julia hljs">versioninfo()</code></pre><pre><code class="nohighlight hljs">Julia Version 1.7.1
-Commit ac5cc99908 (2021-12-22 19:35 UTC)
+pkg&quot;add BGEN&quot;</code></pre><p>In order to run the examples below, the <code>Glob</code> package is also needed. </p><pre><code class="language-julia hljs">pkg&quot;add Glob&quot;</code></pre><pre><code class="language-julia hljs">versioninfo()</code></pre><pre><code class="nohighlight hljs">Julia Version 1.8.5
+Commit 17cfb8e65ea (2023-01-08 06:45 UTC)
 Platform Info:
-  OS: macOS (x86_64-apple-darwin19.5.0)
-  CPU: Intel(R) Core(TM) i7-7820HQ CPU @ 2.90GHz
+  OS: macOS (arm64-apple-darwin21.5.0)
+  CPU: 8 Ã— Apple M2
   WORD_SIZE: 64
   LIBM: libopenlibm
-  LLVM: libLLVM-12.0.1 (ORCJIT, skylake)</code></pre><pre><code class="language-julia hljs">using BGEN, Glob</code></pre><h2 id="Example-Data"><a class="docs-heading-anchor" href="#Example-Data">Example Data</a><a id="Example-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Example-Data" title="Permalink"></a></h2><p>The example datafiles are stored in <code>/data</code> directory of this repository. It can be accessed through the function <code>BGEN.datadir()</code>. These files come from <a href="https://enkre.net/cgi-bin/code/bgen/dir?ci=trunk">the reference implementation</a> for the BGEN format.</p><pre><code class="language-julia hljs">Glob.glob(&quot;*&quot;, BGEN.datadir())</code></pre><pre><code class="nohighlight hljs">79-element Vector{String}:
+  LLVM: libLLVM-13.0.1 (ORCJIT, apple-m1)
+  Threads: 1 on 4 virtual cores</code></pre><pre><code class="language-julia hljs">using BGEN, Glob</code></pre><h2 id="Example-Data"><a class="docs-heading-anchor" href="#Example-Data">Example Data</a><a id="Example-Data-1"></a><a class="docs-heading-anchor-permalink" href="#Example-Data" title="Permalink"></a></h2><p>The example datafiles are stored in <code>/data</code> directory of this repository. It can be accessed through the function <code>BGEN.datadir()</code>. These files come from <a href="https://enkre.net/cgi-bin/code/bgen/dir?ci=trunk">the reference implementation</a> for the BGEN format.</p><pre><code class="language-julia hljs">Glob.glob(&quot;*&quot;, BGEN.datadir())</code></pre><pre><code class="nohighlight hljs">79-element Vector{String}:
  &quot;/Users/kose/.julia/dev/BGEN/src/../data/LICENSE.md&quot;
  &quot;/Users/kose/.julia/dev/BGEN/src/../data/complex.10bits.bgen&quot;
  &quot;/Users/kose/.julia/dev/BGEN/src/../data/complex.11bits.bgen&quot;
@@ -588,7 +589,7 @@ p = probabilities!(b2, vs[3])</code></pre><pre><code class="nohighlight hljs">4Ã
  0x02
  0x02</code></pre><pre><code class="language-julia hljs">alleles(vs[3])</code></pre><pre><code class="nohighlight hljs">2-element Vector{String}:
  &quot;A&quot;
- &quot;G&quot;</code></pre><p>For biallelic nonphased genotype data, <code>first_allele_dosage!(b, v)</code> and <code>minor_allele_dosage!(b, v)</code> can be computed. </p><pre><code class="language-julia hljs">first_allele_dosage!(b, variants[1])</code></pre><pre><code class="nohighlight hljs">500-element Vector{Float32}:
+ &quot;G&quot;</code></pre><p>For biallelic genotype data, <code>first_allele_dosage!(b, v)</code> and <code>minor_allele_dosage!(b, v)</code> can be computed. It also supports phased data.</p><pre><code class="language-julia hljs">first_allele_dosage!(b, variants[1])</code></pre><pre><code class="nohighlight hljs">500-element Vector{Float32}:
  NaN
    0.0627451
    0.08235294
@@ -640,7 +641,7 @@ p = probabilities!(b2, vs[3])</code></pre><pre><code class="nohighlight hljs">4Ã
    1.0431373
    0.05882353
    1.8941176
-   0.99215686</code></pre><pre><code class="language-julia hljs">phased(variants[1])</code></pre><pre><code class="nohighlight hljs">0x00</code></pre><pre><code class="language-julia hljs">n_alleles(variants[1])</code></pre><pre><code class="nohighlight hljs">2</code></pre><pre><code class="language-julia hljs">minor_allele(variants[1])</code></pre><pre><code class="nohighlight hljs">&quot;A&quot;</code></pre><pre><code class="language-julia hljs">major_allele(variants[1])</code></pre><pre><code class="nohighlight hljs">&quot;G&quot;</code></pre><p><code>first_allele_dosage!()</code> and <code>minor_allele_dosage!()</code> support a keyword argument <code>mean_impute</code>, which imputes missing value with the mean of the non-missing values.</p><p><code>minor_allele_dosage!()</code> supports a keyword argument <code>mean_impute</code>, which imputes missing value with the mean of the non-missing values.</p><pre><code class="language-julia hljs">first_allele_dosage!(b, variants[1]; T=Float64, mean_impute=true)</code></pre><pre><code class="nohighlight hljs">500-element Vector{Float32}:
+   0.99215686</code></pre><pre><code class="language-julia hljs">phased(variants[1])</code></pre><pre><code class="nohighlight hljs">0x00</code></pre><pre><code class="language-julia hljs">n_alleles(variants[1])</code></pre><pre><code class="nohighlight hljs">2</code></pre><pre><code class="language-julia hljs">minor_allele(variants[1])</code></pre><pre><code class="nohighlight hljs">&quot;A&quot;</code></pre><pre><code class="language-julia hljs">major_allele(variants[1])</code></pre><pre><code class="nohighlight hljs">&quot;G&quot;</code></pre><p><code>first_allele_dosage!()</code> and <code>minor_allele_dosage!()</code> support a keyword argument <code>mean_impute</code>, which imputes missing value with the mean of the non-missing values.</p><pre><code class="language-julia hljs">dose = first_allele_dosage!(b, variants[1]; T=Float64, mean_impute=true)</code></pre><pre><code class="nohighlight hljs">500-element Vector{Float32}:
  0.39581063
  0.0627451
  0.08235294
@@ -666,7 +667,60 @@ p = probabilities!(b2, vs[3])</code></pre><pre><code class="nohighlight hljs">4Ã
  1.0431373
  0.05882353
  1.8941176
- 0.99215686</code></pre><h2 id="Filtering"><a class="docs-heading-anchor" href="#Filtering">Filtering</a><a id="Filtering-1"></a><a class="docs-heading-anchor-permalink" href="#Filtering" title="Permalink"></a></h2><p>Filtering based on <code>BitVector</code> for samples and variants is supported through <code>BGEN.filter</code> function if bit depth of each variant is a multiple of 8. The syntax is:</p><pre><code class="language-julia hljs">BGEN.filter(dest::AbstractString, b::Bgen, variant_mask::BitVector, 
+ 0.99215686</code></pre><p>The function <code>hardcall(d; threshold=0.1)</code> can be used to convert the dosage vectors to hard-called genotypes, returning a <code>Vector{UInt8}</code> array of values <code>0x00</code>, <code>0x01</code>, <code>0x02</code>, or <code>0x09</code> (for missing). The function <code>hardcall!(c, d; threshold=0.1)</code> can be used to fill in a preallocated integer array <code>c</code>. <code>threshold</code> determines the maximum distance between the hard genotypes and the dosage values. For example, if <code>threshold = 0.1</code>, dosage value in <code>[0, 0.1)</code> gives the hard call <code>0x00</code>, a value in <code>(0.9, 1,1)</code> gives <code>0x01</code>, and a value in <code>(1.9, 2.0]</code> gives <code>0x02</code>. Any other values give <code>0x09</code>. </p><pre><code class="language-julia hljs">c = hardcall(dose; threshold=0.1)</code></pre><pre><code class="nohighlight hljs">500-element Vector{UInt8}:
+ 0x09
+ 0x00
+ 0x00
+ 0x01
+ 0x00
+ 0x09
+ 0x01
+ 0x00
+ 0x09
+ 0x09
+ 0x09
+ 0x09
+ 0x00
+    â‹®
+ 0x00
+ 0x09
+ 0x00
+ 0x01
+ 0x00
+ 0x01
+ 0x00
+ 0x00
+ 0x01
+ 0x00
+ 0x09
+ 0x01</code></pre><pre><code class="language-julia hljs">calls = Vector{UInt8}(undef, length(dose))
+hardcall!(calls, dose; threshold = 0.1)</code></pre><pre><code class="nohighlight hljs">500-element Vector{UInt8}:
+ 0x09
+ 0x00
+ 0x00
+ 0x01
+ 0x00
+ 0x09
+ 0x01
+ 0x00
+ 0x09
+ 0x09
+ 0x09
+ 0x09
+ 0x00
+    â‹®
+ 0x00
+ 0x09
+ 0x00
+ 0x01
+ 0x00
+ 0x01
+ 0x00
+ 0x00
+ 0x01
+ 0x00
+ 0x09
+ 0x01</code></pre><h2 id="Filtering"><a class="docs-heading-anchor" href="#Filtering">Filtering</a><a id="Filtering-1"></a><a class="docs-heading-anchor-permalink" href="#Filtering" title="Permalink"></a></h2><p>Filtering based on <code>BitVector</code> for samples and variants is supported through <code>BGEN.filter</code> function if bit depth of each variant is a multiple of 8. The syntax is:</p><pre><code class="language-julia hljs">BGEN.filter(dest::AbstractString, b::Bgen, variant_mask::BitVector, 
     sample_mask::BitVector=trues(length(b.samples));
     dest_sample = dest[1:end-5] * &quot;.sample&quot;,
     sample_path=nothing, sample_names=b.samples,
@@ -701,4 +755,4 @@ for (v3, v4) in zip(iterator(b3), iterator(b4))
 end</code></pre><pre><code class="language-julia hljs">rm(&quot;test.bgen&quot;, force=true)
 rm(&quot;test.sample&quot;, force=true)
 rm(&quot;test2.bgen&quot;, force=true)
-rm(&quot;test2.sample&quot;, force=true)</code></pre></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Wednesday 19 April 2023 02:18">Wednesday 19 April 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+rm(&quot;test2.sample&quot;, force=true)</code></pre></article><nav class="docs-footer"><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.24 on <span class="colophon-date" title="Wednesday 19 April 2023 21:09">Wednesday 19 April 2023</span>. Using Julia version 1.8.5.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
