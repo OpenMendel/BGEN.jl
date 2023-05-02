@@ -53,6 +53,23 @@ end
     end
 end
 
+@testset "multiple_calls" begin
+b = Bgen(
+    BGEN.datadir("example.8bits.bgen"); 
+    sample_path=BGEN.datadir("example.sample"), 
+    idx_path=BGEN.datadir("example.8bits.bgen.bgi")
+    )
+# second allele minor
+v = variant_by_rsid(b, "RSID_110")
+@test isapprox(mean(minor_allele_dosage!(b, v)), 0.9621725f0)
+@test isapprox(mean(minor_allele_dosage!(b, v)), 1.0378275f0)
+
+# first allele minor
+v = variant_by_rsid(b, "RSID_198")
+@test isapprox(mean(minor_allele_dosage!(b, v)), 0.48411763f0)
+@test isapprox(mean(minor_allele_dosage!(b, v)), 0.48411763f0)
+end
+
 @testset "mean_impute" begin
     path = BGEN.datadir("example.8bits.bgen")
     b = Bgen(path)

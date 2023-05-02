@@ -658,6 +658,7 @@ function minor_allele_dosage!(b::Bgen, v::Variant;
     if genotypes.minor_idx != 1
         second_dosage!(data, genotypes.preamble)
     end
+    genotypes.minor_allele_dosage = true
     return data
 end
 
