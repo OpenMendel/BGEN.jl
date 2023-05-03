@@ -411,6 +411,7 @@ function second_dosage!(data::Vector{<:AbstractFloat}, p::Preamble)
     @inbounds for n in (p.n_samples - p.n_samples % 8 + 1):p.n_samples
         data[n] = 2.0 - data[n]
     end
+    
 end
 
 """
@@ -561,6 +562,7 @@ function first_allele_dosage!(b::Bgen, v::Variant;
         if genotypes.minor_allele_dosage && genotypes.minor_idx != 1
             second_dosage!(genotypes.dose, p)
         end
+        genotypes.minor_allele_dosage = (genotypes.minor_idx == 1)
         return v.genotypes.dose
     end
     if (decompressed !== nothing && !is_decompressed) ||
@@ -610,6 +612,7 @@ function first_allele_dosage!(b::Bgen, v::Variant;
     if clear_decompressed
         clear_decompressed!(genotypes)
     end
+    genotypes.minor_allele_dosage = (genotypes.minor_idx == 1)
     return data
 end
 

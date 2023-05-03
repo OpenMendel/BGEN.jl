@@ -63,10 +63,21 @@ b = Bgen(
 v = variant_by_rsid(b, "RSID_110")
 @test isapprox(mean(minor_allele_dosage!(b, v)), 0.9621725f0)
 @test isapprox(mean(minor_allele_dosage!(b, v)), 0.9621725f0)
+@test isapprox(mean(first_allele_dosage!(b, v)), 2 - 0.9621725f0)
+@test isapprox(mean(minor_allele_dosage!(b, v)), 0.9621725f0)
+clear!(v)
+@test isapprox(mean(first_allele_dosage!(b, v)), 2 - 0.9621725f0)
+@test isapprox(mean(minor_allele_dosage!(b, v)), 0.9621725f0)
+
 
 # first allele minor
 v = variant_by_rsid(b, "RSID_198")
 @test isapprox(mean(minor_allele_dosage!(b, v)), 0.48411763f0)
+@test isapprox(mean(minor_allele_dosage!(b, v)), 0.48411763f0)
+@test isapprox(mean(first_allele_dosage!(b, v)), 0.48411763f0)
+@test isapprox(mean(minor_allele_dosage!(b, v)), 0.48411763f0)
+clear!(v)
+@test isapprox(mean(first_allele_dosage!(b, v)), 0.48411763f0)
 @test isapprox(mean(minor_allele_dosage!(b, v)), 0.48411763f0)
 end
 
