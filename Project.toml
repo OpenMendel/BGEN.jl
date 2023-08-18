@@ -16,7 +16,7 @@ TranscodingStreams = "3bb67fe8-82b1-5028-8e26-92a6c54297fa"
 
 [compat]
 CodecZlib = "0.6, 0.7"
-CodecZstd = "0.6, 0.7"
+CodecZstd = "0.6, 0.7, 0.8"
 SIMD = "3"
 SQLite = "1"
 SpecialFunctions = "1, 2"
