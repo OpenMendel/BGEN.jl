@@ -7,7 +7,7 @@ import SpecialFunctions: gamma_inc
 import TranscodingStreams: initialize, finalize, buffermem, process, Buffer, Error
 import GeneticVariantBase: GeneticData, Variant, VariantIterator, iterator
 import GeneticVariantBase: chrom, pos, rsid, alleles, alt_allele, ref_allele
-import GeneticVariantBase: maf, hwepval, infoscore, load_values!
+import GeneticVariantBase: maf, hwepval, infoscore, alt_dosages!
 export Bgen, Samples, Variant, Genotypes, Index
 export io, fsize, samples, n_samples, n_variants, compression
 export varid, rsid, chrom, pos, n_alleles, alleles, minor_allele, major_allele
@@ -17,7 +17,7 @@ export first_allele_dosage!, clear!, hardcall, hardcall!
 export select_region, variant_by_rsid, variant_by_pos, variant_by_index
 export rsids, chroms, positions
 export hwe, maf, info_score, counts!
-export VariantIteratorFromStart, VariantIteratorFromOffsets
+export BgenVariantIteratorFromStart, BgenVariantIteratorFromOffsets
 using CodecZlib, CodecZstd, SQLite, SIMD
 include("structs.jl")
 include("iterator.jl")

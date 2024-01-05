@@ -84,6 +84,8 @@ clear!(v)
 clear!(v)
 @test isapprox(mean(BGEN.ref_allele_dosage!(b, v)), 0.48411763f0)
 @test isapprox(mean(BGEN.alt_allele_dosage!(b, v)), 2 - 0.48411763f0)
+clear!(v)
+@test isapprox(mean(GeneticVariantBase.alt_dosages!(Vector{Float32}(undef, n_samples(b)), b, v)), 2 - 0.48411763f0)
 end
 
 @testset "mean_impute" begin
