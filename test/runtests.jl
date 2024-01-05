@@ -1,5 +1,6 @@
 using BGEN
 using Statistics, Test, Printf
+using GeneticVariantBase
 const example_8bits = BGEN.datadir("example.8bits.bgen")
 const example_10bits = BGEN.datadir("example.10bits.bgen")
 const example_16bits = BGEN.datadir("example.16bits.bgen")

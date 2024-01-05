@@ -39,7 +39,7 @@ end
     decompress(io, v, h; decompressed=nothing)
 Decompress the compressed byte string for genotypes.
 """
-function decompress(io::IOStream, v::Variant, h::Header;
+function decompress(io::IOStream, v::BgenVariant, h::Header;
     decompressed::Union{Nothing, AbstractVector{UInt8}}=nothing
     )
     compression = h.compression
@@ -132,7 +132,7 @@ end
     parse_preamble(d, idx, h, v)
 Parse preamble of genotypes.
 """
-function parse_preamble(d::AbstractVector{UInt8}, h::Header, v::Variant)
+function parse_preamble(d::AbstractVector{UInt8}, h::Header, v::BgenVariant)
     startidx = 1
     if h.layout == 1
         n_samples = h.n_samples
@@ -492,15 +492,15 @@ function _get_prob_matrix(d::Vector{T}, p::Preamble) where {T <: AbstractFloat}
 end
 
 """
-    probabilities!(b::Bgen, v::Variant; T=Float32, clear_decompressed=false)
-Given a `Bgen` struct and a `Variant`, compute probabilities.
+    probabilities!(b::Bgen, v::BgenVariant; T=Float32, clear_decompressed=false)
+Given a `Bgen` struct and a `BgenVariant`, compute probabilities.
 The result is stored inside `v.genotypes.probs`, which can be cleared using
 `clear!(v)`.
 
 - T: type for the resutls
 - `clear_decompressed`: clears decompressed byte string after execution if set `true`
 """
-function probabilities!(b::Bgen, v::Variant;
+function probabilities!(b::Bgen, v::BgenVariant;
         T=Float32, clear_decompressed=false, data=nothing, decompressed=nothing, is_decompressed=false)
     io, h = b.io, b.header
     if (decompressed !== nothing && !is_decompressed) ||
@@ -546,7 +546,7 @@ function probabilities!(b::Bgen, v::Variant;
     return _get_prob_matrix(genotypes.probs, p)
 end
 
-function first_allele_dosage!(b::Bgen, v::Variant;
+function first_allele_dosage!(b::Bgen, v::BgenVariant;
         T=Float32, mean_impute=false, clear_decompressed=false,
         data=nothing, decompressed=nothing, is_decompressed=false)
     io, h = b.io, b.header
@@ -616,16 +616,34 @@ function first_allele_dosage!(b::Bgen, v::Variant;
     return data
 end
 
-@deprecate ref_allele_dosage!(b::Bgen, v::Variant;
+function ref_allele_dosage!(b::Bgen, v::BgenVariant;
         T=Float32, mean_impute=false, clear_decompressed=false,
-        data=nothing, decompressed=nothing, is_decompressed=false) first_allele_dosage!(b, v; 
+        data=nothing, decompressed=nothing, is_decompressed=false) 
+    data = first_allele_dosage!(b, v; 
         T=T, mean_impute=mean_impute, clear_decompressed=clear_decompressed, 
         data=data, decompressed=decompressed, is_decompressed=is_decompressed)
+    if !b.ref_first
+        second_dosage!(data, v.genotypes.preamble)
+    end
+    data
+end
+
+function alt_allele_dosage!(b::Bgen, v::BgenVariant;
+        T=Float32, mean_impute=false, clear_decompressed=false,
+        data=nothing, decompressed=nothing, is_decompressed=false) 
+    data = first_allele_dosage!(b, v; 
+        T=T, mean_impute=mean_impute, clear_decompressed=clear_decompressed, 
+        data=data, decompressed=decompressed, is_decompressed=is_decompressed)
+    if b.ref_first
+        second_dosage!(data, v.genotypes.preamble)
+    end
+    data
+end
 
 """
-    minor_allele_dosage!(b::Bgen, v::Variant; T=Float32,
+    minor_allele_dosage!(b::Bgen, v::BgenVariant; T=Float32,
     mean_impute=false, clear_decompressed=false)
-Given a `Bgen` struct and a `Variant`, compute minor allele dosage.
+Given a `Bgen` struct and a `BgenVariant`, compute minor allele dosage.
 The result is stored inside `v.genotypes.dose`, which can be cleared using
 `clear!(v)`.
 
@@ -633,7 +651,7 @@ The result is stored inside `v.genotypes.dose`, which can be cleared using
 - `mean_impute`: impute missing values with the mean of nonmissing values
 - `clear_decompressed`: clears decompressed byte string after execution if set `true`
 """
-function minor_allele_dosage!(b::Bgen, v::Variant;
+function minor_allele_dosage!(b::Bgen, v::BgenVariant;
         T=Float32, mean_impute=false, clear_decompressed=false,
         data=nothing, decompressed=nothing, is_decompressed=false)
     # just return it if already computed
@@ -667,9 +685,9 @@ end
 
 """
     clear!(g::Genotypes)
-    clear!(v::Variant)
+    clear!(v::BgenVariant)
 Clears cached decompressed byte representation, probabilities, and dose.
-If `Variant` is given, it removes the corresponding `.genotypes` altogether.
+If `BgenVariant` is given, it removes the corresponding `.genotypes` altogether.
 """
 function clear!(g::Genotypes)
     g.decompressed = nothing

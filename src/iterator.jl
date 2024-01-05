@@ -1,59 +1,59 @@
-abstract type VariantIterator end
+abstract type BgenVariantIterator <: VariantIterator end
 
-@inline function Base.eltype(vi::VariantIterator)
-    Variant
+@inline function Base.eltype(vi::BgenVariantIterator)
+    BgenVariant
 end
 
 """
-    VariantIteratorFromStart(b::Bgen)
+    BgenVariantIteratorFromStart(b::Bgen)
 Variant iterator that iterates from the beginning of the Bgen file
 """
-struct VariantIteratorFromStart <: VariantIterator
+struct BgenVariantIteratorFromStart <: BgenVariantIterator
     b::Bgen
 end
 
-function Base.iterate(vi::VariantIteratorFromStart,
+function Base.iterate(vi::BgenVariantIteratorFromStart,
                         state=offset_first_variant(vi.b))
     if state >= vi.b.fsize
         return nothing
     else
-        v = Variant(vi.b, state)
+        v = BgenVariant(vi.b, state)
         nextstate = v.next_var_offset
         return (v, nextstate)
     end
 end
 
-@inline function Base.length(vi::VariantIteratorFromStart)
+@inline function Base.length(vi::BgenVariantIteratorFromStart)
     vi.b.header.n_variants
 end
 
-@inline function Base.size(vi::VariantIteratorFromStart)
+@inline function Base.size(vi::BgenVariantIteratorFromStart)
     (vi.b.header.n_variants, )
 end
 
 """
-    VariantIteratorFromOffsets(b::Bgen, offsets::Vector{UInt})
-Variant iterator that iterates over a vector of offsets
+    BgenVariantIteratorFromOffsets(b::Bgen, offsets::Vector{UInt})
+BgenVariant iterator that iterates over a vector of offsets
 """
-struct VariantIteratorFromOffsets <: VariantIterator
+struct BgenVariantIteratorFromOffsets <: BgenVariantIterator
     b::Bgen
     offsets::Vector{UInt}
 end
 
-function Base.iterate(vi::VariantIteratorFromOffsets, state=1)
+function Base.iterate(vi::BgenVariantIteratorFromOffsets, state=1)
     state > length(vi.offsets) ? nothing :
-        (Variant(vi.b, vi.offsets[state]), state + 1)
+        (BgenVariant(vi.b, vi.offsets[state]), state + 1)
 end
 
-@inline function Base.length(vi::VariantIteratorFromOffsets)
+@inline function Base.length(vi::BgenVariantIteratorFromOffsets)
     length(vi.offsets)
 end
 
-@inline function Base.size(vi::VariantIteratorFromOffsets)
+@inline function Base.size(vi::BgenVariantIteratorFromOffsets)
     size(vi.offsets)
 end
 
-struct Filter{I, T} <: VariantIterator
+struct Filter{I, T} <: BgenVariantIterator
     itr::I
     min_maf::AbstractFloat
     min_hwe_pval::AbstractFloat
@@ -70,7 +70,7 @@ end
 "Filtered" iterator for variants based on min_maf, min_hwe_pval, min_success_rate_per_variant, 
 cmask, and rmask.
 """
-filter(itr::VariantIterator;
+filter(itr::BgenVariantIterator;
     T=Float32,
     min_maf=NaN, min_hwe_pval=NaN, min_info_score=NaN,
     min_success_rate_per_variant=NaN, 
@@ -144,7 +144,7 @@ function Base.iterate(f::Filter{I,T}, state...) where {I,T}
     nothing
 end
 
-eltype(::Type{Filter{I,T}}) where {I,T} = Variant
+eltype(::Type{Filter{I,T}}) where {I,T} = BgenVariant
 IteratorEltype(::Type{Filter{I,T}}) where {I,T} = IteratorEltype(I)
 IteratorSize(::Type{<:Filter}) = SizeUnknown()
 

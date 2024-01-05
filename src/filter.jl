@@ -47,7 +47,7 @@ function filter(dest::AbstractString, b::Bgen, variant_mask::BitVector,
     end
 end
 
-function write_variant(io::IOStream, b::Bgen, v::Variant, sample_mask::BitVector; use_zlib=false)
+function write_variant(io::IOStream, b::Bgen, v::BgenVariant, sample_mask::BitVector; use_zlib=false)
     write(io, UInt16(length(v.varid)))  # length of varid
     write(io, v.varid)                  # varid
     write(io, UInt16(length(v.rsid)))   # length of rsid

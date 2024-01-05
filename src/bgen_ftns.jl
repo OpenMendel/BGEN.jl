@@ -10,7 +10,8 @@ Variants and genotypes are read separately.
 """
 function Bgen(path::AbstractString;
     sample_path = nothing,
-    idx_path = isfile(path * ".bgi") ? path * ".bgi" : nothing
+    idx_path = isfile(path * ".bgi") ? path * ".bgi" : nothing,
+    ref_first = true
     )
     io = open(path)
     fsize = filesize(path)
@@ -42,7 +43,7 @@ function Bgen(path::AbstractString;
         idx = nothing
     end
 
-    Bgen(io, fsize, header, samples, idx)
+    Bgen(io, fsize, header, samples, idx, ref_first)
 end
 
 @inline io(b::Bgen) = b.io
@@ -69,12 +70,12 @@ of bgen file to the end of it sequentially.
 function iterator(b::Bgen; offsets=nothing, from_bgen_start=false)
     if offsets === nothing
         if b.idx === nothing || from_bgen_start
-            return VariantIteratorFromStart(b)
+            return BgenVariantIteratorFromStart(b)
         else
-            return VariantIteratorFromOffsets(b, BGEN.offsets(b.idx))
+            return BgenVariantIteratorFromOffsets(b, BGEN.offsets(b.idx))
         end
     else
-        return VariantIteratorFromOffsets(b, offsets)
+        return BgenVariantIteratorFromOffsets(b, offsets)
     end
 end
 
@@ -93,7 +94,7 @@ Parse variants of the file.
 function parse_variants(b::Bgen; offsets=nothing, from_bgen_start=false)
     collect(iterator(b; offsets=offsets, from_bgen_start=from_bgen_start))
 end
-function parse_variants(v::VariantIterator)
+function parse_variants(v::BgenVariantIterator)
     collect(v)
 end
 
@@ -115,7 +116,7 @@ function rsids(b::Bgen; offsets=nothing, from_bgen_start=false)
         rsids(vi)
     end
 end
-function rsids(vi::VariantIterator)
+function rsids(vi::BgenVariantIterator)
     collect(v.rsid for v in vi)
 end
 
@@ -137,8 +138,12 @@ function chroms(b::Bgen; vi=nothing, offsets=nothing, from_bgen_start=false)
         chroms(vi)
     end
 end
-function chroms(vi::VariantIterator)
-    collect(v.chroms for v in vi)
+function chroms(vi::BgenVariantIterator)
+    collect(v.chrom for v in vi)
+end
+
+function chrom(b::Bgen, v::BgenVariant)
+    chrom(v)
 end
 
 """
@@ -160,6 +165,28 @@ function positions(b::Bgen; offsets=nothing,
         positions(vi)
     end
 end
-function positions(vi::VariantIterator)
+function positions(vi::BgenVariantIterator)
     collect(v.pos for v in vi)
+end
+
+function pos(b::Bgen, v::BgenVariant)
+    pos(v)
+end
+
+function rsid(b::Bgen, v::BgenVariant)
+    rsid(v)
+end
+
+function alleles(b::Bgen, v::BgenVariant)
+    alleles(v)
+end
+
+function alt_allele(b::Bgen, v::BgenVariant)
+    allele_list = alleles(v)
+    b.ref_first ? allele_list[2] : allele_list[1]
+end
+
+function ref_allele(b::Bgen, v::BgenVariant)
+    allele_list = alleles(v)
+    b.ref_first ? allele_list[1] : allele_list[2]
 end

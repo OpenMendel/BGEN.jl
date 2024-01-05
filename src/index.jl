@@ -27,13 +27,13 @@ end
 """
     select_region(bgen, chrom; start=nothing, stop=nothing)
 Select variants from a region. Returns variant start offsets on the file.
-Returns a `VariantIteratorFromOffsets` object.
+Returns a `BgenVariantIteratorFromOffsets` object.
 """
 function select_region(b::Bgen, chrom::AbstractString;
         start=nothing, stop=nothing)
     _check_idx(b)
     offsets = select_region(b.idx, chrom; start=start, stop=stop)
-    VariantIteratorFromOffsets(b, offsets)
+    BgenVariantIteratorFromOffsets(b, offsets)
 end
 
 function variant_by_rsid(idx::Index, rsid::AbstractString; allele1=nothing, allele2=nothing, allow_multiple=false)
@@ -95,7 +95,7 @@ function variant_by_rsid(b::Bgen, rsid::AbstractString; allele1=nothing, allele2
     _check_idx(b)
     offset = variant_by_rsid(b.idx, rsid; allele1=allele1, allele2=allele2, allow_multiple = varid !== nothing)
     if varid !== nothing
-        vs = map(x -> Variant(b, x), offset)
+        vs = map(x -> BgenVariant(b, x), offset)
         v_idxs = findall(x -> x.varid == varid, vs)
         if length(v_idxs) > 1
             error("Multiple matches.")
@@ -105,7 +105,7 @@ function variant_by_rsid(b::Bgen, rsid::AbstractString; allele1=nothing, allele2
             return vs[v_idxs[1]]
         end
     end
-    return Variant(b, offset)
+    return BgenVariant(b, offset)
 end
 
 function variant_by_pos(idx::Index, pos::Integer)
@@ -127,7 +127,7 @@ Get the variant of bgen variant given `pos` in the index file
 function variant_by_pos(b::Bgen, pos::Integer)
     _check_idx(b)
     offset = variant_by_pos(b.idx, pos)
-    return Variant(b, offset)
+    return BgenVariant(b, offset)
 end
 
 function variant_by_index(idx::Index, first::Integer, last::Union{Nothing, Integer}=nothing)
@@ -150,10 +150,10 @@ function variant_by_index(b::Bgen, first::Integer, last::Union{Nothing, Integer}
     _check_idx(b)
     if last === nothing
         offset = variant_by_index(b.idx, first)[1]
-        return Variant(b, offset)
+        return BgenVariant(b, offset)
     else
         offsets = variant_by_index(b.idx, first, last)
-        return VariantIteratorFromOffsets(b, offsets)
+        return BgenVariantIteratorFromOffsets(b, offsets)
     end
 end
 

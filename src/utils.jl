@@ -1,5 +1,5 @@
 """
-    hwe(b::Bgen, v::Variant; T=Float32, decompressed=nothing)
+    hwe(b::Bgen, v::BgenVariant; T=Float32, decompressed=nothing)
     hwe(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8, 
         rmask::Union{Nothing, Vector{UInt16}})
 Hardy-Weinberg equilibrium test for diploid biallelic case
@@ -85,7 +85,7 @@ function hwe(n00::Real, n01::Real, n11::Real)
 end
 
 """
-    maf(b::Bgen, v::Variant; T=Float32, decompressed=nothing)
+    maf(b::Bgen, v::BgenVariant; T=Float32, decompressed=nothing)
     maf(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8, 
         rmask::Union{Nothing, Vector{UInt16}})
 Minor-allele frequency for diploid biallelic case
@@ -136,7 +136,7 @@ function maf(p::Preamble, d::Vector{UInt8}, startidx::Integer, layout::UInt8,
 end
 
 """
-    info_score(b::Bgen, v::Variant; T=Float32, decompressed=nothing)
+    info_score(b::Bgen, v::BgenVariant; T=Float32, decompressed=nothing)
     info_score(p::Preamble, d::Vector{UInt8}, idx::Vector{<:Integer}, layout::UInt8, 
         rmask::Union{Nothing, Vector{UInt16}})
 Information score of the variant.
@@ -274,7 +274,7 @@ end
 
 for ftn in [:maf, :hwe, :info_score, :counts!]
     @eval begin
-        function $(ftn)(b::Bgen, v::Variant; T=Float32, decompressed=nothing, 
+        function $(ftn)(b::Bgen, v::BgenVariant; T=Float32, decompressed=nothing, 
             is_decompressed=false, rmask=nothing, kwargs...)
             io, h = b.io, b.header
             if (decompressed !== nothing && !is_decompressed) || 

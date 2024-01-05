@@ -41,7 +41,7 @@ mutable struct Genotypes{T}
     minor_allele_dosage::Bool
 end
 
-mutable struct Variant
+mutable struct BgenVariant <: Variant
     offset::UInt64
     geno_offset::UInt64 # to the start of genotype block
     next_var_offset::UInt64
@@ -57,7 +57,7 @@ mutable struct Variant
     genotypes::Union{Nothing, Genotypes}
 end
 
-struct Bgen
+struct Bgen <: GeneticData
     io::IOStream
     fsize::UInt64
 
@@ -66,4 +66,5 @@ struct Bgen
     idx::Union{Index, Nothing}
     # note: detailed information of variables stored in Variable struct,
     # accessed thru VariantIterator
+    ref_first::Bool
 end
