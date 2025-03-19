@@ -69,6 +69,7 @@ function decompress(io::IOStream, v::BgenVariant, h::Header;
             output = Buffer(decompressed)
             error = Error()
             initialize(codec)
+            startproc(codec, :read, error)
             _, _, e = process(codec, buffermem(input), buffermem(output), error)
             if e === :error
                 throw(error[])
