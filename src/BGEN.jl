@@ -4,7 +4,7 @@ import Base: length, getindex, setindex, firstindex, lastindex, eltype, size,
 import Tables: columntable
 import Statistics: mean
 import SpecialFunctions: gamma_inc
-import TranscodingStreams: initialize, finalize, buffermem, process, Buffer, Error
+import TranscodingStreams: initialize, finalize, buffermem, startproc, process, Buffer, Error
 import GeneticVariantBase: GeneticData, Variant, VariantIterator, iterator
 import GeneticVariantBase: chrom, pos, rsid, alleles, alt_allele, ref_allele
 import GeneticVariantBase: maf, hwepval, infoscore, alt_dosages!
