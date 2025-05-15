@@ -641,7 +641,7 @@ function alt_allele_dosage!(b::Bgen, v::BgenVariant;
     data
 end
 
-function alt_dosages!(arr::AbstractArray{T}, b::Bgen, v::BgenVariant;
+function GeneticVariantBase.alt_dosages!(arr::AbstractArray{T}, b::Bgen, v::BgenVariant;
     mean_impute=false, clear_decompressed=false,
     decompressed=nothing, is_decompressed=false) where T <: Real
     alt_allele_dosage!(b, v; T=T, mean_impute=mean_impute, clear_decompressed=clear_decompressed, data=arr, decompressed=decompressed, is_decompressed=is_decompressed)
