@@ -8,6 +8,7 @@ import TranscodingStreams: initialize, finalize, buffermem, startproc, process, 
 import GeneticVariantBase: GeneticData, Variant, VariantIterator, iterator
 import GeneticVariantBase: chrom, pos, rsid, alleles, alt_allele, ref_allele
 import GeneticVariantBase: maf, hwepval, infoscore, alt_dosages!
+import GeneticVariantBase
 export Bgen, Samples, Variant, Genotypes, Index
 export io, fsize, samples, n_samples, n_variants, compression
 export varid, rsid, chrom, pos, n_alleles, alleles, minor_allele, major_allele
