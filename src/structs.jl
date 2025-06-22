@@ -41,7 +41,7 @@ mutable struct Genotypes{T}
     minor_allele_dosage::Bool
 end
 
-mutable struct BgenVariant <: Variant
+mutable struct BgenVariant <: GeneticVariantBase.Variant
     offset::UInt64
     geno_offset::UInt64 # to the start of genotype block
     next_var_offset::UInt64
@@ -57,7 +57,7 @@ mutable struct BgenVariant <: Variant
     genotypes::Union{Nothing, Genotypes}
 end
 
-struct Bgen <: GeneticData
+struct Bgen <: GeneticVariantBase.GeneticData
     io::IOStream
     fsize::UInt64
 

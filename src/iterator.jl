@@ -1,4 +1,4 @@
-abstract type BgenVariantIterator <: VariantIterator end
+abstract type BgenVariantIterator <: GeneticVariantBase.VariantIterator end
 
 @inline function Base.eltype(vi::BgenVariantIterator)
     BgenVariant
@@ -52,6 +52,14 @@ end
 @inline function Base.size(vi::BgenVariantIteratorFromOffsets)
     size(vi.offsets)
 end
+
+function GeneticVariantBase.n_samples(b::Bgen)
+    return b.header.n_samples
+end 
+
+function GeneticVariantBase.n_variants(b::Bgen)
+    return b.header.n_variants
+end 
 
 struct Filter{I, T} <: BgenVariantIterator
     itr::I
